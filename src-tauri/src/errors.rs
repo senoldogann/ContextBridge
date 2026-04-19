@@ -24,7 +24,12 @@ impl Serialize for AppError {
     where
         S: serde::Serializer,
     {
-        serializer.serialize_str(&self.to_string())
+        // Sanitize internal errors before sending to frontend
+        let msg = match self {
+            AppError::Internal(_) => "Internal error: An unexpected error occurred".to_string(),
+            other => other.to_string(),
+        };
+        serializer.serialize_str(&msg)
     }
 }
 
@@ -37,6 +42,7 @@ impl From<rusqlite::Error> for AppError {
 
 impl From<contextbridge_core::AppError> for AppError {
     fn from(e: contextbridge_core::AppError) -> Self {
-        AppError::Internal(e.to_string())
+        tracing::error!("Core error: {e}");
+        AppError::Internal("An unexpected error occurred".into())
     }
 }

@@ -1,10 +1,9 @@
 import { FolderOpen } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { useAddProject } from "@/hooks/useAddProject";
 
 export function EmptyState() {
-  const handleAdd = () => {
-    // TODO(#1): integrate @tauri-apps/plugin-dialog for native folder picker
-    console.warn("Native folder picker not yet implemented");
-  };
+  const handleAdd = useAddProject();
 
   return (
     <main className="flex flex-1 items-center justify-center">
@@ -13,18 +12,14 @@ export function EmptyState() {
           <FolderOpen size={32} className="text-indigo-400" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-zinc-200">No project selected</h2>
+          <h2 className="text-lg font-semibold text-zinc-200">No projects yet</h2>
           <p className="mt-1 max-w-xs text-sm text-zinc-500">
             Add your first project to start generating AI-ready context files.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleAdd}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500"
-        >
+        <Button onClick={handleAdd} aria-label="Add your first project">
           Add Project
-        </button>
+        </Button>
       </div>
     </main>
   );

@@ -1,5 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { ContextNote, ContextRefreshResult, Project, ProjectContext, SyncResult } from "@/types";
+import type {
+  ContextNote,
+  ContextRefreshResult,
+  Project,
+  ProjectContext,
+  SyncResult,
+} from "@/types";
 
 /** List all registered projects. */
 export async function listProjects(): Promise<Project[]> {
@@ -13,7 +19,7 @@ export async function addProject(name: string, rootPath: string): Promise<Projec
 
 /** Remove a project by ID. */
 export async function removeProject(id: string): Promise<void> {
-  return invoke<void>("remove_project", { id });
+  return invoke<undefined>("remove_project", { id });
 }
 
 /** Get the full assembled context for a project. */
@@ -43,7 +49,7 @@ export async function getSetting(key: string): Promise<string | null> {
 
 /** Set a setting value by key. */
 export async function setSetting(key: string, value: string): Promise<void> {
-  return invoke<void>("set_setting", { key, value });
+  return invoke<undefined>("set_setting", { key, value });
 }
 
 /** Sync project context to a specific AI tool target. */
@@ -54,4 +60,20 @@ export async function syncToTool(projectId: string, target: string): Promise<Syn
 /** Sync project context to all enabled AI tool targets. */
 export async function syncAllTools(projectId: string): Promise<SyncResult[]> {
   return invoke<SyncResult[]>("sync_all_tools", { projectId });
+}
+
+/** Add a context note to a project. */
+export async function addNote(
+  projectId: string,
+  category: string,
+  title: string,
+  content: string,
+  priority: number,
+): Promise<ContextNote> {
+  return invoke<ContextNote>("add_note", { projectId, category, title, content, priority });
+}
+
+/** Delete a context note by ID. */
+export async function deleteNote(noteId: string): Promise<void> {
+  return invoke<undefined>("delete_note", { noteId });
 }

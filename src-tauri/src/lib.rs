@@ -36,6 +36,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let data_dir = dirs_data_dir()?;
             fs::create_dir_all(&data_dir)?;
@@ -81,6 +82,8 @@ pub fn run() {
             commands::projects::scan_project,
             commands::projects::refresh_project_context,
             commands::context::search_context,
+            commands::context::add_note,
+            commands::context::delete_note,
             commands::settings::get_setting,
             commands::settings::set_setting,
             commands::projects::sync_to_tool,

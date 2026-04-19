@@ -180,6 +180,24 @@ pub fn list_project_files(
 // Context notes
 // ---------------------------------------------------------------------------
 
+/// Delete a context note by its ID (also removes FTS entry, transactional).
+pub fn delete_context_note(conn: &Connection, note_id: &str) -> Result<(), AppError> {
+    let tx = conn.unchecked_transaction()?;
+    tx.execute(
+        "DELETE FROM context_fts WHERE note_id = ?1",
+        params![note_id],
+    )?;
+    let affected = tx.execute(
+        "DELETE FROM context_notes WHERE id = ?1",
+        params![note_id],
+    )?;
+    if affected == 0 {
+        return Err(AppError::NotFound(format!("note {note_id}")));
+    }
+    tx.commit()?;
+    Ok(())
+}
+
 /// Insert a new context note.
 pub fn insert_context_note(conn: &Connection, note: &ContextNote) -> Result<(), AppError> {
     conn.execute(
