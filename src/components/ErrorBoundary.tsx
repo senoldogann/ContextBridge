@@ -24,7 +24,14 @@ export class ErrorBoundary extends Component<Props, State> {
             <button
               type="button"
               onClick={() => this.setState({ error: null })}
-              className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-500"
+              className="mt-4 rounded-md px-4 py-2 text-sm text-white"
+              style={{ background: "var(--primary)", cursor: "pointer" }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = "var(--primary-hover)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = "var(--primary)";
+              }}
             >
               Try Again
             </button>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MainContent } from "@/components/layout/MainContent";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -9,6 +9,7 @@ import { SplashScreen } from "@/components/ui/SplashScreen";
 import { OnboardingGuide } from "@/components/ui/OnboardingGuide";
 import { useProjectStore } from "@/stores/projectStore";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { useUIStore } from "@/stores/uiStore";
 import { Toaster } from "sonner";
 
 function ErrorBanner() {
@@ -18,12 +19,22 @@ function ErrorBanner() {
   if (!error) return null;
 
   return (
-    <div className="flex items-center justify-between bg-red-900/50 px-4 py-2 text-sm text-red-200 backdrop-blur-sm">
+    <div
+      className="flex items-center justify-between px-4 py-2 text-sm backdrop-blur-sm"
+      style={{ background: "rgba(220,38,38,0.15)", color: "#fca5a5" }}
+    >
       <span>{error}</span>
       <button
         type="button"
         onClick={clearError}
-        className="ml-4 shrink-0 rounded px-2 py-0.5 text-xs text-red-300 hover:bg-red-800"
+        className="ml-4 shrink-0 rounded px-2 py-0.5 text-xs transition-colors"
+        style={{ color: "#fca5a5" }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLElement).style.background = "rgba(220,38,38,0.2)";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.background = "transparent";
+        }}
       >
         Dismiss
       </button>
@@ -36,6 +47,7 @@ export function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const theme = useSettingsStore((s) => s.theme);
   const loadSettings = useSettingsStore((s) => s.loadSettings);
+  const sidebarOpen = useUIStore((s) => s.sidebarOpen);
 
   useEffect(() => {
     void loadSettings();
@@ -49,6 +61,10 @@ export function App() {
     if (!onboardingDone) setShowOnboarding(true);
   };
 
+  const handleShowGuide = () => {
+    setShowOnboarding(true);
+  };
+
   return (
     <div
       className="theme-transition relative flex h-screen flex-col overflow-hidden rounded-lg"
@@ -58,8 +74,6 @@ export function App() {
         border: "1px solid var(--border-strong)",
       }}
     >
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-950/10 via-transparent to-transparent" />
-
       <AnimatePresence>
         {!splashDone && <SplashScreen key="splash" onComplete={handleSplashDone} />}
       </AnimatePresence>
@@ -72,9 +86,22 @@ export function App() {
 
       {splashDone && (
         <>
-          <TitleBar />
+          <TitleBar onShowGuide={handleShowGuide} />
           <div className="relative flex flex-1 overflow-hidden">
-            <Sidebar />
+            <AnimatePresence initial={false}>
+              {sidebarOpen && (
+                <motion.div
+                  key="sidebar"
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: 288, opacity: 1 }}
+                  exit={{ width: 0, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                  className="shrink-0 overflow-hidden"
+                >
+                  <Sidebar />
+                </motion.div>
+              )}
+            </AnimatePresence>
             <div className="relative flex flex-1 flex-col overflow-hidden">
               <UpdateChecker />
               <ErrorBanner />

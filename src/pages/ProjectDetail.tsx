@@ -92,21 +92,21 @@ function OverviewTab() {
         <div className="grid grid-cols-3 gap-3">
           <Card>
             <div className="flex items-center gap-2">
-              <Cpu size={14} className="text-indigo-400" />
+              <Cpu size={14} className="text-emerald-500" />
               <span className="text-xs text-zinc-400">Technologies</span>
             </div>
             <p className="mt-1 text-xl font-bold text-zinc-100">{tech_stack.length}</p>
           </Card>
           <Card>
             <div className="flex items-center gap-2">
-              <FileText size={14} className="text-indigo-400" />
+              <FileText size={14} className="text-emerald-500" />
               <span className="text-xs text-zinc-400">Notes</span>
             </div>
             <p className="mt-1 text-xl font-bold text-zinc-100">{context.notes.length}</p>
           </Card>
           <Card>
             <div className="flex items-center gap-2">
-              <Clock size={14} className="text-indigo-400" />
+              <Clock size={14} className="text-emerald-500" />
               <span className="text-xs text-zinc-400">Changes</span>
             </div>
             <p className="mt-1 text-xl font-bold text-zinc-100">{recent_changes.length}</p>
@@ -180,7 +180,7 @@ function NotesTab() {
               <select
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
-                className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 focus:border-indigo-500 focus:outline-none"
+                className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 focus:border-emerald-500 focus:outline-none"
               >
                 {[
                   "architecture",
@@ -205,7 +205,7 @@ function NotesTab() {
                 max={10}
                 value={form.priority}
                 onChange={(e) => setForm({ ...form, priority: Number(e.target.value) })}
-                className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 focus:border-indigo-500 focus:outline-none"
+                className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 focus:border-emerald-500 focus:outline-none"
               />
             </div>
           </div>
@@ -216,7 +216,7 @@ function NotesTab() {
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="Note title"
-              className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-emerald-500 focus:outline-none"
             />
           </div>
           <div>
@@ -226,7 +226,7 @@ function NotesTab() {
               onChange={(e) => setForm({ ...form, content: e.target.value })}
               placeholder="Note content"
               rows={3}
-              className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-emerald-500 focus:outline-none"
             />
           </div>
           <div className="flex gap-2">
@@ -449,7 +449,7 @@ function ChangesTab() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   {change.commit_hash && (
-                    <span className="font-mono text-xs text-indigo-400">
+                    <span className="font-mono text-xs text-emerald-500">
                       {change.commit_hash.slice(0, 7)}
                     </span>
                   )}

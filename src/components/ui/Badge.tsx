@@ -19,7 +19,7 @@ const variantStyles: Record<BadgeVariant, React.CSSProperties> = {
 
 const variantClasses: Record<BadgeVariant, string> = {
   default: "",
-  primary: "bg-indigo-500/15 text-indigo-400 ring-indigo-500/25",
+  primary: "bg-emerald-500/15 text-emerald-500 ring-emerald-500/25",
   success: "bg-emerald-500/15 text-emerald-400 ring-emerald-500/25",
   warning: "bg-amber-500/15 text-amber-400 ring-amber-500/25",
   danger: "bg-red-500/15 text-red-400 ring-red-500/25",
@@ -27,7 +27,7 @@ const variantClasses: Record<BadgeVariant, string> = {
 
 const dotColors: Record<BadgeVariant, string> = {
   default: "",
-  primary: "bg-indigo-400",
+  primary: "bg-emerald-500",
   success: "bg-emerald-400",
   warning: "bg-amber-400",
   danger: "bg-red-400",

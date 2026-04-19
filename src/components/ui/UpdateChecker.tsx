@@ -95,7 +95,7 @@ export function UpdateChecker() {
           <span>Downloading update…</span>
           <div className="h-2 flex-1 overflow-hidden rounded-full bg-blue-950">
             <div
-              className="h-2 rounded-full bg-gradient-to-r from-blue-400 to-indigo-400 transition-all duration-300"
+              className="h-2 rounded-full bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-300"
               style={{ width: `${state.progress}%` }}
             />
           </div>

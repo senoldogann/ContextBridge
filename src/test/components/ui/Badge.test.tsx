@@ -17,13 +17,13 @@ describe("Badge", () => {
   it("applies primary variant classes", () => {
     render(<Badge variant="primary">Primary</Badge>);
     const badge = screen.getByText("Primary");
-    expect(badge).toHaveClass("text-indigo-400");
+    expect(badge).toHaveClass("text-emerald-500");
   });
 
   it("applies success variant classes", () => {
     render(<Badge variant="success">Success</Badge>);
     const badge = screen.getByText("Success");
-    expect(badge).toHaveClass("text-emerald-400");
+    expect(badge).toHaveClass("text-emerald-500");
   });
 
   it("applies warning variant classes", () => {

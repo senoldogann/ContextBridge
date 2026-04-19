@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface TabItem {
@@ -19,7 +18,11 @@ export function TabGroup({ tabs, defaultTab }: TabGroupProps) {
 
   return (
     <div>
-      <div className="relative flex gap-1 border-b border-zinc-800" role="tablist">
+      <div
+        className="relative flex gap-1"
+        style={{ borderBottom: "1px solid var(--border)" }}
+        role="tablist"
+      >
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -28,16 +31,15 @@ export function TabGroup({ tabs, defaultTab }: TabGroupProps) {
             aria-selected={activeTab === tab.id}
             aria-controls={`panel-${tab.id}`}
             onClick={() => setActiveTab(tab.id)}
-            className={clsx(
-              "relative px-4 py-2.5 text-sm font-medium transition-colors",
-              activeTab === tab.id ? "text-indigo-400" : "text-zinc-500 hover:text-zinc-300",
-            )}
+            className="relative px-4 py-2.5 text-sm font-medium transition-colors"
+            style={{ color: activeTab === tab.id ? "var(--primary)" : "var(--text-muted)" }}
           >
             {tab.label}
             {activeTab === tab.id && (
               <motion.div
                 layoutId="activeTab"
-                className="absolute inset-x-0 -bottom-px h-0.5 bg-gradient-to-r from-indigo-500 to-indigo-400"
+                className="absolute inset-x-0 -bottom-px h-0.5"
+                style={{ background: "var(--accent-gradient)" }}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
               />
             )}

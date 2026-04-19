@@ -140,7 +140,7 @@ export function Settings() {
                       type="checkbox"
                       checked={enabledAdapters.includes(adapter)}
                       onChange={(e) => handleAdapterToggle(adapter, e.target.checked)}
-                      className="h-3.5 w-3.5 rounded accent-indigo-500"
+                      className="h-3.5 w-3.5 rounded accent-emerald-500"
                     />
                     <span className="text-sm capitalize" style={{ color: "var(--text-secondary)" }}>
                       {adapter}

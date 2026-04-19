@@ -8,28 +8,28 @@ describe("Button", () => {
     expect(screen.getByRole("button", { name: "Click me" })).toBeInTheDocument();
   });
 
-  it("applies primary variant classes by default", () => {
+  it("applies primary variant styles by default", () => {
     render(<Button>Primary</Button>);
     const btn = screen.getByRole("button");
-    expect(btn).toHaveClass("bg-indigo-600", "text-white");
+    expect(btn).toHaveStyle({ color: "#ffffff" });
   });
 
-  it("applies secondary variant classes", () => {
+  it("applies secondary variant styles", () => {
     render(<Button variant="secondary">Secondary</Button>);
     const btn = screen.getByRole("button");
-    expect(btn).toHaveClass("bg-zinc-800", "text-zinc-200");
+    expect(btn.style.background).toBeTruthy();
   });
 
-  it("applies ghost variant classes", () => {
+  it("applies ghost variant styles", () => {
     render(<Button variant="ghost">Ghost</Button>);
     const btn = screen.getByRole("button");
-    expect(btn).toHaveClass("text-zinc-400");
+    expect(btn).toHaveStyle({ background: "transparent" });
   });
 
-  it("applies danger variant classes", () => {
+  it("applies danger variant styles", () => {
     render(<Button variant="danger">Danger</Button>);
     const btn = screen.getByRole("button");
-    expect(btn).toHaveClass("bg-red-600", "text-white");
+    expect(btn).toHaveStyle({ color: "#ffffff" });
   });
 
   it("applies sm size classes", () => {

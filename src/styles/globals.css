@@ -4,74 +4,78 @@
 @custom-variant dark (&:is(.dark *));
 @custom-variant light (&:is(.light *));
 
-/* ── Design tokens ── */
+/* ── Design tokens (ChatGPT / Claude inspired) ── */
 :root {
-  /* brand */
-  --primary:            #6366f1;
-  --primary-hover:      #818cf8;
-  --primary-muted:      rgba(99, 102, 241, 0.15);
-  --primary-ring:       rgba(99, 102, 241, 0.30);
-  --accent-gradient:    linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #6366f1 100%);
+  /* brand — teal-green accent like ChatGPT + blue accent like Claude */
+  --primary:            #10a37f;
+  --primary-hover:      #13c294;
+  --primary-muted:      rgba(16, 163, 127, 0.12);
+  --primary-ring:       rgba(16, 163, 127, 0.28);
+  --accent:             #4a7afe;
+  --accent-muted:       rgba(74, 122, 254, 0.12);
+  --accent-gradient:    linear-gradient(135deg, #10a37f 0%, #4a7afe 100%);
 
-  /* ── dark theme (default) ── */
-  --bg-base:            #09090b;
-  --bg-surface:         #111113;
-  --bg-elevated:        #18181b;
-  --bg-hover:           rgba(39, 39, 42, 0.80);
-  --bg-active:          rgba(99, 102, 241, 0.12);
-  --bg-input:           rgba(39, 39, 42, 0.70);
-  --bg-badge:           rgba(39, 39, 42, 0.90);
+  /* ── dark theme (default) — deep charcoal like ChatGPT ── */
+  --bg-base:            #171717;
+  --bg-surface:         #1e1e1e;
+  --bg-elevated:        #212121;
+  --bg-hover:           rgba(55, 55, 55, 0.70);
+  --bg-active:          rgba(16, 163, 127, 0.10);
+  --bg-input:           rgba(50, 50, 50, 0.70);
+  --bg-badge:           rgba(55, 55, 55, 0.90);
 
-  --border:             rgba(39, 39, 42, 0.60);
-  --border-strong:      rgba(63, 63, 70, 0.70);
-  --border-active:      rgba(99, 102, 241, 0.30);
-  --border-dashed:      rgba(63, 63, 70, 0.55);
+  --border:             rgba(55, 55, 55, 0.70);
+  --border-strong:      rgba(75, 75, 75, 0.70);
+  --border-active:      rgba(16, 163, 127, 0.35);
+  --border-dashed:      rgba(75, 75, 75, 0.55);
 
-  --text-primary:       #f4f4f5;
-  --text-secondary:     #a1a1aa;
-  --text-muted:         #71717a;
-  --text-badge:         #a1a1aa;
-  --text-link:          #818cf8;
+  --text-primary:       #ececf1;
+  --text-secondary:     #b4b4b4;
+  --text-muted:         #8e8ea0;
+  --text-badge:         #b4b4b4;
+  --text-link:          #10a37f;
 
-  --shadow-card:        0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
-  --shadow-hover:       0 4px 16px rgba(0,0,0,0.5);
+  --shadow-card:        0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-hover:       0 4px 16px rgba(0,0,0,0.4);
 
-  --scrollbar-track:    #1c1c1f;
-  --scrollbar-thumb:    #3f3f46;
-  --scrollbar-hover:    #52525b;
+  --scrollbar-track:    #2a2a2a;
+  --scrollbar-thumb:    #424242;
+  --scrollbar-hover:    #555555;
 }
 
 :root.light {
-  --primary:            #4f46e5;
-  --primary-hover:      #6366f1;
-  --primary-muted:      rgba(79, 70, 229, 0.10);
-  --primary-ring:       rgba(79, 70, 229, 0.25);
+  --primary:            #0d8a6f;
+  --primary-hover:      #10a37f;
+  --primary-muted:      rgba(13, 138, 111, 0.08);
+  --primary-ring:       rgba(13, 138, 111, 0.20);
+  --accent:             #2f5ae5;
+  --accent-muted:       rgba(47, 90, 229, 0.08);
 
-  --bg-base:            #f1f5f9;
+  --bg-base:            #f7f7f8;
   --bg-surface:         #ffffff;
   --bg-elevated:        #ffffff;
-  --bg-hover:           rgba(226, 232, 240, 0.70);
-  --bg-active:          rgba(79, 70, 229, 0.08);
-  --bg-input:           rgba(248, 250, 252, 0.95);
-  --bg-badge:           rgba(241, 245, 249, 0.95);
+  --bg-hover:           rgba(0, 0, 0, 0.04);
+  --bg-active:          rgba(13, 138, 111, 0.06);
+  --bg-input:           #ffffff;
+  --bg-badge:           rgba(0, 0, 0, 0.04);
 
-  --border:             rgba(203, 213, 225, 0.80);
-  --border-strong:      rgba(148, 163, 184, 0.60);
-  --border-active:      rgba(79, 70, 229, 0.30);
-  --border-dashed:      rgba(203, 213, 225, 0.80);
+  --border:             #e5e5e5;
+  --border-strong:      #d1d1d1;
+  --border-active:      rgba(13, 138, 111, 0.30);
+  --border-dashed:      #d9d9d9;
 
-  --text-primary:       #0f172a;
-  --text-secondary:     #334155;
-  --text-muted:         #64748b;
-  --text-badge:         #475569;
-  --text-link:          #4f46e5;
+  --text-primary:       #1a1a1b;
+  --text-secondary:     #555770;
+  --text-muted:         #6e6e80;
+  --text-badge:         #555770;
+  --text-link:          #0d8a6f;
 
-  --shadow-card:        0 1px 3px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.06);
-  --shadow-hover:       0 4px 16px rgba(15,23,42,0.12);
+  --shadow-card:        0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-hover:       0 4px 16px rgba(0,0,0,0.08);
 
-  --scrollbar-track:    #e2e8f0;
-  --scrollbar-thumb:    #94a3b8;
-  --scrollbar-hover:    #64748b;
+  --scrollbar-track:    #f0f0f0;
+  --scrollbar-thumb:    #c4c4c4;
+  --scrollbar-hover:    #999999;
 }
 
 /* ── Global base ── */
@@ -148,35 +152,41 @@ button, a, input, select, textarea {
 }
 
 /* ── Light mode: remap hardcoded zinc-* classes ── */
-/* Covers files that still use Tailwind zinc color classes */
-.light .text-zinc-100 { color: #0f172a; }
-.light .text-zinc-200 { color: #1e293b; }
-.light .text-zinc-300 { color: #334155; }
-.light .text-zinc-400 { color: #475569; }
-.light .text-zinc-500 { color: #64748b; }
-.light .text-zinc-600 { color: #94a3b8; }
+.light .text-zinc-100 { color: #1a1a1b; }
+.light .text-zinc-200 { color: #2d2d2d; }
+.light .text-zinc-300 { color: #555770; }
+.light .text-zinc-400 { color: #555770; }
+.light .text-zinc-500 { color: #6e6e80; }
+.light .text-zinc-600 { color: #8e8ea0; }
 
-.light .bg-zinc-950, .light .bg-zinc-900 { background-color: #f8fafc; }
-.light .bg-zinc-800  { background-color: #f1f5f9; }
-.light .bg-zinc-700  { background-color: #e2e8f0; }
+.light .bg-zinc-950, .light .bg-zinc-900 { background-color: #f7f7f8; }
+.light .bg-zinc-800  { background-color: #f0f0f1; }
+.light .bg-zinc-700  { background-color: #e5e5e5; }
 
-.light .border-zinc-900 { border-color: rgba(226, 232, 240, 0.9); }
-.light .border-zinc-800 { border-color: rgba(203, 213, 225, 0.8); }
-.light .border-zinc-700 { border-color: rgba(148, 163, 184, 0.7); }
+.light .border-zinc-900 { border-color: #e5e5e5; }
+.light .border-zinc-800 { border-color: #d9d9d9; }
+.light .border-zinc-700 { border-color: #c4c4c4; }
 
 .light :is(input, select, textarea).bg-zinc-800 {
   background-color: #ffffff;
-  border-color: rgba(203, 213, 225, 0.9);
-  color: #0f172a;
+  border-color: #d9d9d9;
+  color: #1a1a1b;
 }
 .light :is(input, select, textarea).border-zinc-700 {
-  border-color: rgba(148, 163, 184, 0.8);
+  border-color: #c4c4c4;
 }
 .light :is(input, select, textarea).text-zinc-200 {
-  color: #0f172a;
+  color: #1a1a1b;
 }
 
-.light .hover\:bg-zinc-800:hover  { background-color: #f1f5f9; }
-.light .hover\:bg-zinc-700:hover  { background-color: #e2e8f0; }
-.light .hover\:text-zinc-200:hover { color: #0f172a; }
-.light .hover\:text-zinc-300:hover { color: #1e293b; }
+.light .hover\:bg-zinc-800:hover  { background-color: #f0f0f1; }
+.light .hover\:bg-zinc-700:hover  { background-color: #e5e5e5; }
+.light .hover\:text-zinc-200:hover { color: #1a1a1b; }
+.light .hover\:text-zinc-300:hover { color: #2d2d2d; }
+
+/* Light mode accent overrides for any remaining hardcoded emerald/teal classes */
+.light .text-emerald-400, .light .text-emerald-500 { color: #0d8a6f; }
+.light .text-emerald-300 { color: #10a37f; }
+.light .bg-emerald-600 { background-color: #0d8a6f; }
+.light .from-emerald-600 { --tw-gradient-from: #0d8a6f; }
+.light .to-teal-600 { --tw-gradient-to: #10a37f; }

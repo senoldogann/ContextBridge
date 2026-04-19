@@ -4,7 +4,7 @@ interface BridgeIconProps {
 }
 
 export function BridgeIcon({ className = "h-5 w-5", gradient = false }: BridgeIconProps) {
-  const id = "bridge-grad";
+  const id = "cb-grad";
 
   return (
     <svg
@@ -15,50 +15,39 @@ export function BridgeIcon({ className = "h-5 w-5", gradient = false }: BridgeIc
       aria-hidden="true"
     >
       <defs>
-        <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#818cf8" />
-          <stop offset="100%" stopColor="#a78bfa" />
+        <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#10a37f" />
+          <stop offset="100%" stopColor="#4a7afe" />
         </linearGradient>
       </defs>
 
-      {/* Deck / road */}
-      <line
-        x1="2"
-        y1="24"
-        x2="30"
-        y2="24"
-        stroke={gradient ? `url(#${id})` : "currentColor"}
-        strokeWidth="2.5"
-        strokeLinecap="round"
+      {/* Rounded square background */}
+      <rect
+        x="2"
+        y="2"
+        width="28"
+        height="28"
+        rx="8"
+        fill={gradient ? `url(#${id})` : "currentColor"}
+        opacity={gradient ? 1 : 0.12}
       />
 
-      {/* Main arch cable */}
+      {/* "CB" letterforms */}
       <path
-        d="M4 24 Q16 6 28 24"
-        stroke={gradient ? `url(#${id})` : "currentColor"}
-        strokeWidth="2.5"
+        d="M11.5 10.5C10 10.5 8.5 11.5 8.5 13.5V18.5C8.5 20.5 10 21.5 11.5 21.5H13"
+        stroke={gradient ? "white" : "currentColor"}
+        strokeWidth="2.2"
         strokeLinecap="round"
         fill="none"
       />
-
-      {/* Vertical hangers */}
-      {[9, 14, 18, 23].map((x) => {
-        // y on the parabola: y = 6 + ((x-16)^2 / 19.2) roughly
-        const y = Math.round(6 + (x - 16) ** 2 / 19.2);
-        return (
-          <line
-            key={x}
-            x1={x}
-            y1={y}
-            x2={x}
-            y2={24}
-            stroke={gradient ? `url(#${id})` : "currentColor"}
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            opacity="0.7"
-          />
-        );
-      })}
+      <path
+        d="M17 10.5H19.5C21 10.5 22.5 11.2 22.5 13C22.5 14.2 21.5 15 20.5 15.2C21.8 15.4 23 16.2 23 17.8C23 19.8 21.5 21.5 19.5 21.5H17V10.5Z"
+        stroke={gradient ? "white" : "currentColor"}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
     </svg>
   );
 }
