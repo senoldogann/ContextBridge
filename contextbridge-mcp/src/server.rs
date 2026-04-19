@@ -37,7 +37,12 @@ struct Response {
 
 impl Response {
     fn ok(id: Value, result: Value) -> Self {
-        Self { jsonrpc: "2.0", id, result: Some(result), error: None }
+        Self {
+            jsonrpc: "2.0",
+            id,
+            result: Some(result),
+            error: None,
+        }
     }
 
     fn err(id: Value, code: i64, message: &str) -> Self {
@@ -112,7 +117,10 @@ fn call_tool(name: &str, args: &Value) -> Value {
     let result = match name {
         "list_projects" => handle_list_projects(),
         "get_context" => {
-            let pid = args.get("project_id").and_then(|v| v.as_str()).unwrap_or("");
+            let pid = args
+                .get("project_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
             if pid.is_empty() {
                 Err(anyhow::anyhow!("missing required parameter: project_id"))
             } else {
@@ -120,10 +128,15 @@ fn call_tool(name: &str, args: &Value) -> Value {
             }
         }
         "search_context" => {
-            let pid = args.get("project_id").and_then(|v| v.as_str()).unwrap_or("");
+            let pid = args
+                .get("project_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
             let query = args.get("query").and_then(|v| v.as_str()).unwrap_or("");
             if pid.is_empty() || query.is_empty() {
-                Err(anyhow::anyhow!("missing required parameters: project_id, query"))
+                Err(anyhow::anyhow!(
+                    "missing required parameters: project_id, query"
+                ))
             } else {
                 handle_search_context(pid, query)
             }

@@ -83,11 +83,7 @@ impl WatcherSupervisor {
     /// A dedicated OS thread is spawned that runs the blocking
     /// [`notify::RecommendedWatcher`] loop and forwards debounced events to
     /// the Tauri frontend via the `"file-change"` event.
-    pub fn watch_project(
-        &mut self,
-        project_id: String,
-        path: PathBuf,
-    ) -> Result<(), AppError> {
+    pub fn watch_project(&mut self, project_id: String, path: PathBuf) -> Result<(), AppError> {
         if self.watchers.contains_key(&project_id) {
             tracing::warn!(
                 project_id = %project_id,
@@ -284,7 +280,8 @@ fn flush_pending(
     // Group paths by event type, emitting relative paths.
     let mut grouped: HashMap<&str, Vec<String>> = HashMap::new();
     for (path, (etype, _)) in pending.drain() {
-        let rel = path.strip_prefix(project_root)
+        let rel = path
+            .strip_prefix(project_root)
             .unwrap_or(&path)
             .to_string_lossy()
             .into_owned();

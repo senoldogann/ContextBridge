@@ -103,7 +103,9 @@ pub fn refresh_context(
 
     let root = Path::new(&project.root_path);
     if !root.exists() {
-        return Err(AppError::InvalidInput("Project path no longer exists on disk".into()));
+        return Err(AppError::InvalidInput(
+            "Project path no longer exists on disk".into(),
+        ));
     }
 
     tracing::info!(project_id, path = %project.root_path, "Starting context refresh");
@@ -172,7 +174,9 @@ pub fn partial_refresh(
     let root = Path::new(&project.root_path);
 
     if !root.exists() {
-        return Err(AppError::InvalidInput("Project path no longer exists on disk".into()));
+        return Err(AppError::InvalidInput(
+            "Project path no longer exists on disk".into(),
+        ));
     }
 
     tracing::debug!(
@@ -186,7 +190,11 @@ pub fn partial_refresh(
     for rel_path in changed_paths {
         // Reject any path that attempts traversal
         let rel = Path::new(rel_path);
-        if rel.is_absolute() || rel.components().any(|c| matches!(c, std::path::Component::ParentDir)) {
+        if rel.is_absolute()
+            || rel
+                .components()
+                .any(|c| matches!(c, std::path::Component::ParentDir))
+        {
             tracing::warn!(project_id, path = %rel_path, "Rejected path with traversal components");
             continue;
         }
@@ -204,7 +212,7 @@ pub fn partial_refresh(
 
         // Also verify canonical path is within root
         if let Ok(canonical) = abs.canonicalize() {
-            if !canonical.starts_with(&root) {
+            if !canonical.starts_with(root) {
                 tracing::warn!(project_id, path = %rel_path, "Path escapes project root — skipping");
                 continue;
             }
@@ -405,9 +413,9 @@ fn generate_architecture_note(files: &[ScannedFile], project_id: &str) -> Contex
         .iter()
         .any(|f| f.rel_path.starts_with("src/components/"));
     let has_hooks = files.iter().any(|f| f.rel_path.starts_with("src/hooks/"));
-    let has_pages = files.iter().any(|f| {
-        f.rel_path.starts_with("src/pages/") || f.rel_path.starts_with("src/app/")
-    });
+    let has_pages = files
+        .iter()
+        .any(|f| f.rel_path.starts_with("src/pages/") || f.rel_path.starts_with("src/app/"));
     if has_components && (has_hooks || has_pages) {
         patterns.push("Standard React project structure");
     }
@@ -431,12 +439,19 @@ fn generate_architecture_note(files: &[ScannedFile], project_id: &str) -> Contex
     }
 
     // CI/CD.
-    if all_paths.contains(".github/workflows") || files.iter().any(|f| f.rel_path.starts_with(".github/workflows/")) {
+    if all_paths.contains(".github/workflows")
+        || files
+            .iter()
+            .any(|f| f.rel_path.starts_with(".github/workflows/"))
+    {
         patterns.push("GitHub Actions CI/CD");
     }
 
     // Docker.
-    if files.iter().any(|f| f.rel_path == "Dockerfile" || f.rel_path == "docker-compose.yml") {
+    if files
+        .iter()
+        .any(|f| f.rel_path == "Dockerfile" || f.rel_path == "docker-compose.yml")
+    {
         patterns.push("Docker containerisation");
     }
 
@@ -449,10 +464,7 @@ fn generate_architecture_note(files: &[ScannedFile], project_id: &str) -> Contex
     let title = if patterns.is_empty() {
         "Architecture overview".to_string()
     } else {
-        format!(
-            "Architecture — {} pattern(s) detected",
-            patterns.len()
-        )
+        format!("Architecture — {} pattern(s) detected", patterns.len())
     };
 
     ContextNote {
@@ -486,10 +498,7 @@ fn is_git_repo(path: &Path) -> bool {
 /// Removes the previous note (by ID) from both `context_notes` and
 /// `context_fts`, then inserts the new version.
 fn upsert_auto_note(conn: &rusqlite::Connection, note: &ContextNote) -> Result<(), AppError> {
-    conn.execute(
-        "DELETE FROM context_notes WHERE id = ?1",
-        params![note.id],
-    )?;
+    conn.execute("DELETE FROM context_notes WHERE id = ?1", params![note.id])?;
     conn.execute(
         "DELETE FROM context_fts WHERE note_id = ?1",
         params![note.id],
@@ -529,10 +538,8 @@ fn detect_language_simple(ext: &str) -> Option<String> {
 /// Simple file classification by extension (used in partial refresh).
 fn classify_simple(ext: &str) -> String {
     match ext {
-        "rs" | "ts" | "tsx" | "js" | "jsx" | "mjs" | "cjs" | "py" | "go" | "rb" | "java"
-        | "kt" | "kts" | "swift" | "dart" | "c" | "h" | "cpp" | "cc" | "cs" => {
-            "source".into()
-        }
+        "rs" | "ts" | "tsx" | "js" | "jsx" | "mjs" | "cjs" | "py" | "go" | "rb" | "java" | "kt"
+        | "kts" | "swift" | "dart" | "c" | "h" | "cpp" | "cc" | "cs" => "source".into(),
         "json" | "yaml" | "yml" | "toml" | "xml" | "ini" | "env" => "config".into(),
         "md" | "mdx" | "txt" | "rst" => "documentation".into(),
         "html" | "htm" | "css" | "scss" | "sass" | "less" => "source".into(),
@@ -558,7 +565,9 @@ fn compute_hash_if_small(path: &Path) -> Option<String> {
     let mut total: u64 = 0;
     loop {
         let n = file.read(&mut buf).ok()?;
-        if n == 0 { break; }
+        if n == 0 {
+            break;
+        }
         total += n as u64;
         if total > 1_048_576 {
             return None;

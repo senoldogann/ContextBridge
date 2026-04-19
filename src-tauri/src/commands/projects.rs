@@ -10,7 +10,10 @@ use tauri::State;
 /// List all registered projects.
 #[tauri::command]
 pub fn list_projects(state: State<'_, AppState>) -> Result<Vec<Project>, AppError> {
-    let storage = state.storage.lock().map_err(|_| AppError::Internal("State unavailable".into()))?;
+    let storage = state
+        .storage
+        .lock()
+        .map_err(|_| AppError::Internal("State unavailable".into()))?;
     queries::list_projects(&storage.conn)
 }
 
@@ -42,7 +45,10 @@ pub fn add_project(
     }
 
     let project = {
-        let storage = state.storage.lock().map_err(|_| AppError::Internal("State unavailable".into()))?;
+        let storage = state
+            .storage
+            .lock()
+            .map_err(|_| AppError::Internal("State unavailable".into()))?;
         let now = chrono::Utc::now().to_rfc3339();
         let project = Project {
             id: uuid::Uuid::new_v4().to_string(),
@@ -57,8 +63,13 @@ pub fn add_project(
 
     // Auto-scan after adding (re-acquire lock briefly)
     {
-        let storage = state.storage.lock().map_err(|_| AppError::Internal("State unavailable".into()))?;
-        if let Err(e) = context_engine::refresh_context(&storage, &project.id, &RefreshOptions::default()) {
+        let storage = state
+            .storage
+            .lock()
+            .map_err(|_| AppError::Internal("State unavailable".into()))?;
+        if let Err(e) =
+            context_engine::refresh_context(&storage, &project.id, &RefreshOptions::default())
+        {
             tracing::warn!(project_id = %project.id, error = %e, "Auto-scan failed after adding project");
         }
     } // storage lock released
@@ -81,7 +92,10 @@ pub fn remove_project(state: State<'_, AppState>, id: String) -> Result<(), AppE
         let _ = watcher.unwatch_project(&id);
     }
 
-    let storage = state.storage.lock().map_err(|_| AppError::Internal("State unavailable".into()))?;
+    let storage = state
+        .storage
+        .lock()
+        .map_err(|_| AppError::Internal("State unavailable".into()))?;
     queries::delete_project(&storage.conn, &id)
 }
 
@@ -91,7 +105,10 @@ pub fn get_project_context(
     state: State<'_, AppState>,
     project_id: String,
 ) -> Result<ProjectContext, AppError> {
-    let storage = state.storage.lock().map_err(|_| AppError::Internal("State unavailable".into()))?;
+    let storage = state
+        .storage
+        .lock()
+        .map_err(|_| AppError::Internal("State unavailable".into()))?;
     queries::assemble_context(&storage.conn, &project_id)
 }
 
@@ -101,7 +118,10 @@ pub fn scan_project(
     state: State<'_, AppState>,
     project_id: String,
 ) -> Result<context_engine::ContextRefreshResult, AppError> {
-    let storage = state.storage.lock().map_err(|_| AppError::Internal("State unavailable".into()))?;
+    let storage = state
+        .storage
+        .lock()
+        .map_err(|_| AppError::Internal("State unavailable".into()))?;
     context_engine::refresh_context(&storage, &project_id, &RefreshOptions::default())
 }
 

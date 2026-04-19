@@ -9,9 +9,7 @@ fn init_test_repo(dir: &std::path::Path) {
     fs::write(dir.join("README.md"), "# Test Project").unwrap();
 
     let mut index = repo.index().unwrap();
-    index
-        .add_path(std::path::Path::new("README.md"))
-        .unwrap();
+    index.add_path(std::path::Path::new("README.md")).unwrap();
     index.write().unwrap();
     let tree_id = index.write_tree().unwrap();
     let tree = repo.find_tree(tree_id).unwrap();
@@ -28,15 +26,8 @@ fn init_test_repo(dir: &std::path::Path) {
     let tree_id = index.write_tree().unwrap();
     let tree = repo.find_tree(tree_id).unwrap();
     let head = repo.head().unwrap().peel_to_commit().unwrap();
-    repo.commit(
-        Some("HEAD"),
-        &sig,
-        &sig,
-        "Add source file",
-        &tree,
-        &[&head],
-    )
-    .unwrap();
+    repo.commit(Some("HEAD"), &sig, &sig, "Add source file", &tree, &[&head])
+        .unwrap();
 }
 
 #[test]
@@ -57,9 +48,7 @@ fn test_analyze_git_repo() {
     assert_eq!(result.recent_commits.len(), 2, "Expected 2 commits");
     // Most recent commit first
     assert!(
-        result.recent_commits[0]
-            .summary
-            .contains("Add source file"),
+        result.recent_commits[0].summary.contains("Add source file"),
         "Expected most recent commit first, got: {}",
         result.recent_commits[0].summary
     );
@@ -78,7 +67,10 @@ fn test_analyze_dirty_repo() {
     let result =
         contextbridge_lib::core::git_analyzer::analyze_git_repo(dir.path(), "test-proj", 50)
             .unwrap();
-    assert!(result.is_dirty, "Repo should be dirty after adding untracked file");
+    assert!(
+        result.is_dirty,
+        "Repo should be dirty after adding untracked file"
+    );
 }
 
 #[test]
@@ -96,9 +88,12 @@ fn test_analyze_and_persist() {
     };
     contextbridge_lib::db::queries::insert_project(&sm.conn, &project).unwrap();
 
-    let result =
-        contextbridge_lib::core::git_analyzer::analyze_and_persist(&sm.conn, "git-test", dir.path())
-            .unwrap();
+    let result = contextbridge_lib::core::git_analyzer::analyze_and_persist(
+        &sm.conn,
+        "git-test",
+        dir.path(),
+    )
+    .unwrap();
     assert_eq!(result.recent_commits.len(), 2);
 
     // Verify persisted
@@ -112,7 +107,6 @@ fn test_not_a_git_repo() {
     let dir = TempDir::new().unwrap();
     fs::write(dir.path().join("file.txt"), "not a repo").unwrap();
 
-    let result =
-        contextbridge_lib::core::git_analyzer::analyze_git_repo(dir.path(), "test", 50);
+    let result = contextbridge_lib::core::git_analyzer::analyze_git_repo(dir.path(), "test", 50);
     assert!(result.is_err(), "Should fail for a non-git directory");
 }

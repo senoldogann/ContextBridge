@@ -8,8 +8,23 @@ pub mod watcher;
 
 /// Directories whose changes are never interesting — shared by the scanner and watcher.
 pub const IGNORED_DIRS: &[&str] = &[
-    ".git", "node_modules", "target", "dist", "build", ".next",
-    "__pycache__", ".venv", "venv", ".tox", ".mypy_cache",
-    ".pytest_cache", "vendor", "Pods", ".gradle", ".idea",
-    ".vscode", "coverage", ".nyc_output",
+    ".git",
+    "node_modules",
+    "target",
+    "dist",
+    "build",
+    ".next",
+    "__pycache__",
+    ".venv",
+    "venv",
+    ".tox",
+    ".mypy_cache",
+    ".pytest_cache",
+    "vendor",
+    "Pods",
+    ".gradle",
+    ".idea",
+    ".vscode",
+    "coverage",
+    ".nyc_output",
 ];

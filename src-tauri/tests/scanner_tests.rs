@@ -29,7 +29,11 @@ tokio = "1"
     assert!(
         result.tech_stack.iter().any(|t| t.name == "Rust"),
         "Expected Rust in tech stack, got: {:?}",
-        result.tech_stack.iter().map(|t| &t.name).collect::<Vec<_>>()
+        result
+            .tech_stack
+            .iter()
+            .map(|t| &t.name)
+            .collect::<Vec<_>>()
     );
     // Should find at least 3 files
     assert!(
@@ -82,11 +86,7 @@ fn test_scan_ignores_node_modules() {
     let dir = TempDir::new().unwrap();
     fs::write(dir.path().join("package.json"), r#"{"name":"test"}"#).unwrap();
     fs::create_dir_all(dir.path().join("node_modules/react")).unwrap();
-    fs::write(
-        dir.path().join("node_modules/react/index.js"),
-        "// react",
-    )
-    .unwrap();
+    fs::write(dir.path().join("node_modules/react/index.js"), "// react").unwrap();
     fs::create_dir_all(dir.path().join("src")).unwrap();
     fs::write(dir.path().join("src/app.js"), "// app").unwrap();
 

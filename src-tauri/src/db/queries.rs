@@ -4,6 +4,9 @@ use crate::db::models::*;
 use crate::errors::AppError;
 use rusqlite::{params, Connection};
 
+/// Row returned by [`list_project_files`]: (rel_path, file_type, language, size_bytes).
+pub type ProjectFileRow = (String, String, Option<String>, i64);
+
 // ---------------------------------------------------------------------------
 // Projects
 // ---------------------------------------------------------------------------
@@ -33,17 +36,16 @@ pub fn get_project(conn: &Connection, id: &str) -> Result<Project, AppError> {
         },
     )
     .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => {
-            AppError::NotFound(format!("project {id}"))
-        }
+        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("project {id}")),
         other => AppError::Database(other.to_string()),
     })
 }
 
 /// List all projects.
 pub fn list_projects(conn: &Connection) -> Result<Vec<Project>, AppError> {
-    let mut stmt =
-        conn.prepare("SELECT id, name, root_path, created_at, updated_at FROM projects ORDER BY name")?;
+    let mut stmt = conn.prepare(
+        "SELECT id, name, root_path, created_at, updated_at FROM projects ORDER BY name",
+    )?;
     let rows = stmt.query_map([], |row| {
         Ok(Project {
             id: row.get(0)?,
@@ -67,10 +69,7 @@ pub fn list_projects(conn: &Connection) -> Result<Vec<Project>, AppError> {
 /// so we clean up `context_fts` manually before removing the project.
 pub fn delete_project(conn: &Connection, id: &str) -> Result<(), AppError> {
     // Clean up FTS entries before cascade delete
-    conn.execute(
-        "DELETE FROM context_fts WHERE project_id = ?1",
-        params![id],
-    )?;
+    conn.execute("DELETE FROM context_fts WHERE project_id = ?1", params![id])?;
     let affected = conn.execute("DELETE FROM projects WHERE id = ?1", params![id])?;
     if affected == 0 {
         return Err(AppError::NotFound(format!("project {id}")));
@@ -160,7 +159,7 @@ pub fn upsert_file(
 pub fn list_project_files(
     conn: &Connection,
     project_id: &str,
-) -> Result<Vec<(String, String, Option<String>, i64)>, AppError> {
+) -> Result<Vec<ProjectFileRow>, AppError> {
     let mut stmt = conn.prepare(
         "SELECT rel_path, file_type, language, size_bytes
          FROM project_files WHERE project_id = ?1 ORDER BY rel_path",
@@ -187,10 +186,7 @@ pub fn delete_context_note(conn: &Connection, note_id: &str) -> Result<(), AppEr
         "DELETE FROM context_fts WHERE note_id = ?1",
         params![note_id],
     )?;
-    let affected = tx.execute(
-        "DELETE FROM context_notes WHERE id = ?1",
-        params![note_id],
-    )?;
+    let affected = tx.execute("DELETE FROM context_notes WHERE id = ?1", params![note_id])?;
     if affected == 0 {
         return Err(AppError::NotFound(format!("note {note_id}")));
     }

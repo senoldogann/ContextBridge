@@ -71,8 +71,7 @@ fn setup_test_project() -> (StorageManager, TempDir, String) {
 fn test_sync_to_claude() {
     let (storage, dir, pid) = setup_test_project();
 
-    let result =
-        contextbridge_lib::core::sync::sync_to_tool(&storage, &pid, "claude").unwrap();
+    let result = contextbridge_lib::core::sync::sync_to_tool(&storage, &pid, "claude").unwrap();
 
     assert!(result.written, "first sync should write");
     assert_eq!(result.target, "claude");
@@ -91,8 +90,7 @@ fn test_sync_to_claude() {
 fn test_sync_to_cursor() {
     let (storage, dir, pid) = setup_test_project();
 
-    let result =
-        contextbridge_lib::core::sync::sync_to_tool(&storage, &pid, "cursor").unwrap();
+    let result = contextbridge_lib::core::sync::sync_to_tool(&storage, &pid, "cursor").unwrap();
 
     assert!(result.written);
     assert_eq!(result.target, "cursor");
@@ -111,8 +109,7 @@ fn test_sync_to_cursor() {
 fn test_sync_to_copilot() {
     let (storage, dir, pid) = setup_test_project();
 
-    let result =
-        contextbridge_lib::core::sync::sync_to_tool(&storage, &pid, "copilot").unwrap();
+    let result = contextbridge_lib::core::sync::sync_to_tool(&storage, &pid, "copilot").unwrap();
 
     assert!(result.written);
     assert_eq!(result.target, "copilot");
@@ -125,8 +122,7 @@ fn test_sync_to_copilot() {
 fn test_sync_to_codex() {
     let (storage, dir, pid) = setup_test_project();
 
-    let result =
-        contextbridge_lib::core::sync::sync_to_tool(&storage, &pid, "codex").unwrap();
+    let result = contextbridge_lib::core::sync::sync_to_tool(&storage, &pid, "codex").unwrap();
 
     assert!(result.written);
     assert_eq!(result.target, "codex");
@@ -143,12 +139,10 @@ fn test_sync_to_codex() {
 fn test_sync_content_hash_skip() {
     let (storage, _dir, pid) = setup_test_project();
 
-    let first =
-        contextbridge_lib::core::sync::sync_to_tool(&storage, &pid, "claude").unwrap();
+    let first = contextbridge_lib::core::sync::sync_to_tool(&storage, &pid, "claude").unwrap();
     assert!(first.written, "first sync should write");
 
-    let second =
-        contextbridge_lib::core::sync::sync_to_tool(&storage, &pid, "claude").unwrap();
+    let second = contextbridge_lib::core::sync::sync_to_tool(&storage, &pid, "claude").unwrap();
     assert!(
         !second.written,
         "second sync with unchanged content should skip"
@@ -182,8 +176,7 @@ fn test_sync_invalid_target() {
 fn test_sync_all() {
     let (storage, _dir, pid) = setup_test_project();
 
-    let results =
-        contextbridge_lib::core::sync::sync_all(&storage, &pid).unwrap();
+    let results = contextbridge_lib::core::sync::sync_all(&storage, &pid).unwrap();
 
     assert_eq!(results.len(), 4, "sync_all should produce 4 results");
 

@@ -58,8 +58,7 @@ pub fn analyze_git_repo(
     let is_dirty = check_dirty(&repo);
 
     // --- commit log ---
-    let (recent_commits, total_commits) =
-        collect_commits(&repo, project_id, limit);
+    let (recent_commits, total_commits) = collect_commits(&repo, project_id, limit);
 
     tracing::info!(
         project_id,
@@ -101,10 +100,7 @@ pub fn analyze_and_persist(
     }
 
     // Build a context note summarising the git state.
-    let branch_label = analysis
-        .current_branch
-        .as_deref()
-        .unwrap_or("(detached)");
+    let branch_label = analysis.current_branch.as_deref().unwrap_or("(detached)");
     let now = Utc::now().to_rfc3339();
     let note_id = format!("git-summary-{project_id}");
 
@@ -158,9 +154,7 @@ fn detect_remote_url(repo: &Repository) -> Option<String> {
         .or_else(|| {
             repo.remotes()
                 .ok()
-                .and_then(|names| {
-                    names.iter().flatten().next().map(String::from)
-                })
+                .and_then(|names| names.iter().flatten().next().map(String::from))
                 .and_then(|name| {
                     repo.find_remote(&name)
                         .ok()
@@ -191,8 +185,7 @@ fn strip_credentials(url: &str) -> String {
 /// Return `true` if the working directory has any uncommitted changes.
 fn check_dirty(repo: &Repository) -> bool {
     let mut opts = StatusOptions::new();
-    opts.include_untracked(true)
-        .recurse_untracked_dirs(false);
+    opts.include_untracked(true).recurse_untracked_dirs(false);
 
     repo.statuses(Some(&mut opts))
         .map(|s| !s.is_empty())
@@ -245,10 +238,7 @@ fn collect_commits(
             }
         };
 
-        let summary = commit
-            .summary()
-            .unwrap_or_default()
-            .to_string();
+        let summary = commit.summary().unwrap_or_default().to_string();
 
         let author = commit.author().name().map(String::from);
 
@@ -290,10 +280,7 @@ fn changed_files(repo: &Repository, commit: &git2::Commit<'_>) -> String {
     };
 
     let parent_tree = if commit.parent_count() > 0 {
-        commit
-            .parent(0)
-            .ok()
-            .and_then(|p| p.tree().ok())
+        commit.parent(0).ok().and_then(|p| p.tree().ok())
     } else {
         None // initial commit — diff against empty tree
     };

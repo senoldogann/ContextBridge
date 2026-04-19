@@ -58,7 +58,6 @@ fn sync_to_tool_with_context(
     target: &str,
     ctx: &ProjectContext,
 ) -> Result<SyncResult, AppError> {
-
     // Get formatter for target
     let (content, filename, output_dir) = format_for_target(target, ctx)?;
 
@@ -146,10 +145,7 @@ fn sync_to_tool_with_context(
 /// Iterates over every [`VALID_TARGETS`] entry and returns one
 /// [`SyncResult`] per target. Failures for individual targets are logged
 /// but do not prevent other targets from syncing.
-pub fn sync_all(
-    storage: &StorageManager,
-    project_id: &str,
-) -> Result<Vec<SyncResult>, AppError> {
+pub fn sync_all(storage: &StorageManager, project_id: &str) -> Result<Vec<SyncResult>, AppError> {
     let ctx = queries::assemble_context(&storage.conn, project_id)?;
     let mut results = Vec::new();
     for target in VALID_TARGETS {

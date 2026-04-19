@@ -23,7 +23,12 @@ impl ContextFormatter for ClaudeFormatter {
     fn format(&self, ctx: &ProjectContext) -> Result<String, AppError> {
         let mut out = String::new();
 
-        writeln!(out, "# {}\n", crate::output::sanitize_for_heading(&ctx.project.name)).map_err(|e| AppError::Other(e.to_string()))?;
+        writeln!(
+            out,
+            "# {}\n",
+            crate::output::sanitize_for_heading(&ctx.project.name)
+        )
+        .map_err(|e| AppError::Other(e.to_string()))?;
 
         // Overview
         write_overview(&mut out, ctx)?;
@@ -197,8 +202,12 @@ fn write_recent_changes(out: &mut String, ctx: &ProjectContext) -> Result<(), Ap
     for change in ctx.recent_changes.iter().take(15) {
         let hash = change.commit_hash.as_deref().unwrap_or("");
         let short = hash.get(..7).unwrap_or(hash);
-        writeln!(out, "- `{short}` **{}** — {}", change.change_type, change.summary)
-            .map_err(fmt_err)?;
+        writeln!(
+            out,
+            "- `{short}` **{}** — {}",
+            change.change_type, change.summary
+        )
+        .map_err(fmt_err)?;
     }
     writeln!(out).map_err(fmt_err)?;
     Ok(())

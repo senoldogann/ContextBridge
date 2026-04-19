@@ -12,9 +12,7 @@ async fn main() -> anyhow::Result<()> {
     // Direct tracing output to stderr so it doesn't interfere with JSON-RPC on stdout.
     tracing_subscriber::fmt()
         .with_writer(std::io::stderr)
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::from_default_env(),
-        )
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
     server::run().await

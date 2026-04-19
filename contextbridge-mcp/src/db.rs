@@ -12,8 +12,7 @@ use rusqlite::{params, Connection, OpenFlags};
 /// The path is resolved from `CONTEXTBRIDGE_DB_PATH` env var, or falls back
 /// to the platform-specific default location.
 pub fn open_db() -> Result<Connection> {
-    let path =
-        std::env::var("CONTEXTBRIDGE_DB_PATH").unwrap_or_else(|_| default_db_path());
+    let path = std::env::var("CONTEXTBRIDGE_DB_PATH").unwrap_or_else(|_| default_db_path());
 
     let conn = Connection::open_with_flags(
         &path,
@@ -66,56 +65,66 @@ pub fn get_project(conn: &Connection, id: &str) -> Result<Project> {
 pub fn assemble_context(conn: &Connection, project_id: &str) -> Result<ProjectContext> {
     let project = get_project(conn, project_id)?;
 
-    let tech_stack = query_collect(conn,
+    let tech_stack = query_collect(
+        conn,
         "SELECT id, project_id, category, name, version, confidence, source
          FROM project_tech_stack WHERE project_id = ?1 ORDER BY category, name",
         params![project_id],
-        |row| Ok(TechEntry {
-            id: row.get(0)?,
-            project_id: row.get(1)?,
-            category: row.get(2)?,
-            name: row.get(3)?,
-            version: row.get(4)?,
-            confidence: row.get(5)?,
-            source: row.get(6)?,
-        }),
+        |row| {
+            Ok(TechEntry {
+                id: row.get(0)?,
+                project_id: row.get(1)?,
+                category: row.get(2)?,
+                name: row.get(3)?,
+                version: row.get(4)?,
+                confidence: row.get(5)?,
+                source: row.get(6)?,
+            })
+        },
     )?;
 
-    let notes = query_collect(conn,
+    let notes = query_collect(
+        conn,
         "SELECT id, project_id, category, title, content, source, priority, created_at, updated_at
          FROM context_notes WHERE project_id = ?1 ORDER BY priority DESC, updated_at DESC",
         params![project_id],
         map_note,
     )?;
 
-    let recent_changes = query_collect(conn,
+    let recent_changes = query_collect(
+        conn,
         "SELECT id, project_id, change_type, summary, files, author, timestamp, commit_hash
          FROM recent_changes WHERE project_id = ?1 ORDER BY timestamp DESC LIMIT 50",
         params![project_id],
-        |row| Ok(RecentChange {
-            id: row.get(0)?,
-            project_id: row.get(1)?,
-            change_type: row.get(2)?,
-            summary: row.get(3)?,
-            files: row.get(4)?,
-            author: row.get(5)?,
-            timestamp: row.get(6)?,
-            commit_hash: row.get(7)?,
-        }),
+        |row| {
+            Ok(RecentChange {
+                id: row.get(0)?,
+                project_id: row.get(1)?,
+                change_type: row.get(2)?,
+                summary: row.get(3)?,
+                files: row.get(4)?,
+                author: row.get(5)?,
+                timestamp: row.get(6)?,
+                commit_hash: row.get(7)?,
+            })
+        },
     )?;
 
-    let sync_state = query_collect(conn,
+    let sync_state = query_collect(
+        conn,
         "SELECT id, project_id, target, output_path, content_hash, synced_at
          FROM sync_state WHERE project_id = ?1",
         params![project_id],
-        |row| Ok(SyncState {
-            id: row.get(0)?,
-            project_id: row.get(1)?,
-            target: row.get(2)?,
-            output_path: row.get(3)?,
-            content_hash: row.get(4)?,
-            synced_at: row.get(5)?,
-        }),
+        |row| {
+            Ok(SyncState {
+                id: row.get(0)?,
+                project_id: row.get(1)?,
+                target: row.get(2)?,
+                output_path: row.get(3)?,
+                content_hash: row.get(4)?,
+                synced_at: row.get(5)?,
+            })
+        },
     )?;
 
     Ok(ProjectContext {
@@ -130,11 +139,7 @@ pub fn assemble_context(conn: &Connection, project_id: &str) -> Result<ProjectCo
 /// Search context notes via FTS5 full-text search.
 ///
 /// User input is sanitized to strip FTS5 special operators.
-pub fn search_notes(
-    conn: &Connection,
-    project_id: &str,
-    query: &str,
-) -> Result<Vec<ContextNote>> {
+pub fn search_notes(conn: &Connection, project_id: &str, query: &str) -> Result<Vec<ContextNote>> {
     let sanitized: String = query
         .chars()
         .filter(|c| c.is_alphanumeric() || c.is_whitespace() || *c == '-' || *c == '_')
@@ -154,7 +159,8 @@ pub fn search_notes(
 
     let fts_query = format!("\"{}\"", sanitized.replace('"', "\"\""));
 
-    query_collect(conn,
+    query_collect(
+        conn,
         "SELECT cn.id, cn.project_id, cn.category, cn.title, cn.content, cn.source,
                 cn.priority, cn.created_at, cn.updated_at
          FROM context_notes cn
@@ -170,12 +176,7 @@ pub fn search_notes(
 // ---- helpers ----------------------------------------------------------------
 
 /// Helper: prepare → query_map → collect into Vec, avoiding lifetime issues.
-fn query_collect<T, P, F>(
-    conn: &Connection,
-    sql: &str,
-    params: P,
-    f: F,
-) -> Result<Vec<T>>
+fn query_collect<T, P, F>(conn: &Connection, sql: &str, params: P, f: F) -> Result<Vec<T>>
 where
     P: rusqlite::Params,
     F: FnMut(&rusqlite::Row<'_>) -> rusqlite::Result<T>,

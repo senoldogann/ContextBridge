@@ -12,7 +12,10 @@ pub fn search_context(
     project_id: String,
     query: String,
 ) -> Result<Vec<ContextNote>, AppError> {
-    let storage = state.storage.lock().map_err(|_| AppError::Internal("State unavailable".into()))?;
+    let storage = state
+        .storage
+        .lock()
+        .map_err(|_| AppError::Internal("State unavailable".into()))?;
     queries::search_context_notes(&storage.conn, &project_id, &query)
 }
 
@@ -27,7 +30,13 @@ pub fn add_note(
     priority: i32,
 ) -> Result<ContextNote, AppError> {
     const ALLOWED_CATEGORIES: &[&str] = &[
-        "architecture", "conventions", "dependencies", "patterns", "testing", "deployment", "other",
+        "architecture",
+        "conventions",
+        "dependencies",
+        "patterns",
+        "testing",
+        "deployment",
+        "other",
     ];
 
     let title = title.trim().to_string();
@@ -37,13 +46,19 @@ pub fn add_note(
         return Err(AppError::InvalidInput("Title must not be empty".into()));
     }
     if title.len() > 500 {
-        return Err(AppError::InvalidInput("Title must not exceed 500 characters".into()));
+        return Err(AppError::InvalidInput(
+            "Title must not exceed 500 characters".into(),
+        ));
     }
     if content.len() > 100_000 {
-        return Err(AppError::InvalidInput("Content must not exceed 100KB".into()));
+        return Err(AppError::InvalidInput(
+            "Content must not exceed 100KB".into(),
+        ));
     }
     if !(0..=10).contains(&priority) {
-        return Err(AppError::InvalidInput("Priority must be between 0 and 10".into()));
+        return Err(AppError::InvalidInput(
+            "Priority must be between 0 and 10".into(),
+        ));
     }
     if !ALLOWED_CATEGORIES.contains(&category.as_str()) {
         return Err(AppError::InvalidInput("Invalid category".into()));
@@ -62,17 +77,20 @@ pub fn add_note(
         updated_at: now,
     };
 
-    let storage = state.storage.lock().map_err(|_| AppError::Internal("State unavailable".into()))?;
+    let storage = state
+        .storage
+        .lock()
+        .map_err(|_| AppError::Internal("State unavailable".into()))?;
     queries::insert_context_note(&storage.conn, &note)?;
     Ok(note)
 }
 
 /// Delete a context note by its ID.
 #[tauri::command]
-pub fn delete_note(
-    state: State<'_, AppState>,
-    note_id: String,
-) -> Result<(), AppError> {
-    let storage = state.storage.lock().map_err(|_| AppError::Internal("State unavailable".into()))?;
+pub fn delete_note(state: State<'_, AppState>, note_id: String) -> Result<(), AppError> {
+    let storage = state
+        .storage
+        .lock()
+        .map_err(|_| AppError::Internal("State unavailable".into()))?;
     queries::delete_context_note(&storage.conn, &note_id)
 }

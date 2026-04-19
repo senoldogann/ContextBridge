@@ -107,7 +107,10 @@ fn test_claude_formatter_structure() {
         output.contains("## Build & Run"),
         "missing Build & Run section"
     );
-    assert!(output.contains("cargo build"), "missing cargo build command");
+    assert!(
+        output.contains("cargo build"),
+        "missing cargo build command"
+    );
     assert!(
         output.contains("## Coding Conventions"),
         "missing Coding Conventions section"
@@ -185,10 +188,7 @@ fn test_cursor_formatter_mdc_frontmatter() {
     let output = CursorFormatter.format(&ctx).unwrap();
 
     assert!(output.starts_with("---"), "should start with frontmatter");
-    assert!(
-        output.contains("description:"),
-        "missing description field"
-    );
+    assert!(output.contains("description:"), "missing description field");
     assert!(
         output.contains("TestProject"),
         "description should mention project name"
@@ -266,7 +266,10 @@ fn test_codex_formatter_agents_md() {
         output.contains("## Setup Commands"),
         "missing Setup Commands section"
     );
-    assert!(output.contains("cargo build"), "missing cargo build command");
+    assert!(
+        output.contains("cargo build"),
+        "missing cargo build command"
+    );
     assert!(
         output.contains("## Tech Stack"),
         "missing Tech Stack section"
@@ -321,7 +324,10 @@ fn test_globs_from_tech() {
         source: "test".into(),
     }];
     let globs = generate_globs_from_tech(&ts_only);
-    assert!(globs.contains("**/*.ts"), "TypeScript should produce **/*.ts");
+    assert!(
+        globs.contains("**/*.ts"),
+        "TypeScript should produce **/*.ts"
+    );
     assert!(
         globs.contains("**/*.tsx"),
         "TypeScript should produce **/*.tsx"
@@ -345,7 +351,10 @@ fn test_build_commands_from_tech() {
     }];
     let cmds = generate_build_commands(&rust_tech);
     let cmd_strs: Vec<&str> = cmds.iter().map(|(_, c)| c.as_str()).collect();
-    assert!(cmd_strs.contains(&"cargo build"), "Rust missing cargo build");
+    assert!(
+        cmd_strs.contains(&"cargo build"),
+        "Rust missing cargo build"
+    );
     assert!(cmd_strs.contains(&"cargo test"), "Rust missing cargo test");
 
     let node_tech = vec![TechEntry {

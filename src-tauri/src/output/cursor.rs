@@ -26,7 +26,12 @@ impl ContextFormatter for CursorFormatter {
         writeln!(out, "alwaysApply: true").map_err(fmt_err)?;
         writeln!(out, "---\n").map_err(fmt_err)?;
 
-        writeln!(out, "# {} Context\n", crate::output::sanitize_for_heading(&ctx.project.name)).map_err(fmt_err)?;
+        writeln!(
+            out,
+            "# {} Context\n",
+            crate::output::sanitize_for_heading(&ctx.project.name)
+        )
+        .map_err(fmt_err)?;
 
         // Tech Stack
         if !ctx.tech_stack.is_empty() {

@@ -80,7 +80,10 @@ pub fn scan_project(root_path: &Path) -> Result<ScanResult, AppError> {
     let mut files: Vec<ScannedFile> = Vec::new();
     let mut total_size: u64 = 0;
 
-    let walker = WalkDir::new(&root).follow_links(false).max_depth(MAX_DEPTH).into_iter();
+    let walker = WalkDir::new(&root)
+        .follow_links(false)
+        .max_depth(MAX_DEPTH)
+        .into_iter();
 
     for entry in walker.filter_entry(|e| should_visit(e, &ignored, &allowed_hidden)) {
         let entry = match entry {
@@ -351,8 +354,22 @@ fn classify_file(rel_path: &str, ext: &str, language: Option<&str>) -> String {
     // Assets
     if matches!(
         ext,
-        "png" | "jpg" | "jpeg" | "gif" | "svg" | "ico" | "webp" | "mp4" | "mp3" | "wav"
-            | "ogg" | "woff" | "woff2" | "ttf" | "otf" | "eot"
+        "png"
+            | "jpg"
+            | "jpeg"
+            | "gif"
+            | "svg"
+            | "ico"
+            | "webp"
+            | "mp4"
+            | "mp3"
+            | "wav"
+            | "ogg"
+            | "woff"
+            | "woff2"
+            | "ttf"
+            | "otf"
+            | "eot"
     ) {
         return "asset".into();
     }
@@ -389,7 +406,9 @@ fn compute_hash(path: &Path) -> Option<String> {
     let mut total: u64 = 0;
     loop {
         let n = file.read(&mut buf).ok()?;
-        if n == 0 { break; }
+        if n == 0 {
+            break;
+        }
         total += n as u64;
         if total > 1_048_576 {
             return None;
@@ -411,297 +430,289 @@ fn detect_tech_stack(root: &Path) -> Result<Vec<TechEntry>, AppError> {
     let mut entries: Vec<TechEntry> = Vec::new();
 
     // Helper closure to push a tech entry.
-    let mut add = |category: &str,
-                   name: &str,
-                   version: Option<String>,
-                   confidence: f64,
-                   source: &str| {
-        entries.push(TechEntry {
-            id: 0,
-            project_id: String::new(),
-            category: category.into(),
-            name: name.into(),
-            version,
-            confidence,
-            source: source.into(),
-        });
-    };
+    {
+        let mut add =
+            |category: &str, name: &str, version: Option<String>, confidence: f64, source: &str| {
+                entries.push(TechEntry {
+                    id: 0,
+                    project_id: String::new(),
+                    category: category.into(),
+                    name: name.into(),
+                    version,
+                    confidence,
+                    source: source.into(),
+                });
+            };
 
-    // ── package.json ──────────────────────────────────────────────────
-    let pkg_path = root.join("package.json");
-    if pkg_path.is_file() {
-        if let Ok(raw) = fs::read_to_string(&pkg_path) {
-            if let Ok(pkg) = serde_json::from_str::<serde_json::Value>(&raw) {
-                // Node.js runtime
-                let node_ver = pkg
-                    .pointer("/engines/node")
-                    .and_then(|v| v.as_str())
-                    .map(String::from);
-                add("runtime", "Node.js", node_ver, 0.95, "package.json");
-
-                // TypeScript from devDependencies
-                if let Some(ts_ver) = pkg
-                    .pointer("/devDependencies/typescript")
-                    .and_then(|v| v.as_str())
-                {
-                    add(
-                        "language",
-                        "TypeScript",
-                        Some(ts_ver.into()),
-                        0.95,
-                        "package.json",
-                    );
-                }
-
-                // Framework detection from dependencies + devDependencies
-                let framework_checks: &[(&str, &str)] = &[
-                    ("next", "Next.js"),
-                    ("nuxt", "Nuxt"),
-                    ("remix", "Remix"),
-                    ("react", "React"),
-                    ("vue", "Vue"),
-                    ("@angular/core", "Angular"),
-                    ("svelte", "Svelte"),
-                ];
-
-                let deps = pkg.get("dependencies");
-                let dev_deps = pkg.get("devDependencies");
-
-                for &(key, name) in framework_checks {
-                    let version = deps
-                        .and_then(|d| d.get(key))
-                        .or_else(|| dev_deps.and_then(|d| d.get(key)))
+        // ── package.json ──────────────────────────────────────────────────
+        let pkg_path = root.join("package.json");
+        if pkg_path.is_file() {
+            if let Ok(raw) = fs::read_to_string(&pkg_path) {
+                if let Ok(pkg) = serde_json::from_str::<serde_json::Value>(&raw) {
+                    // Node.js runtime
+                    let node_ver = pkg
+                        .pointer("/engines/node")
                         .and_then(|v| v.as_str())
                         .map(String::from);
-                    if version.is_some() {
-                        add("framework", name, version, 0.9, "package.json");
+                    add("runtime", "Node.js", node_ver, 0.95, "package.json");
+
+                    // TypeScript from devDependencies
+                    if let Some(ts_ver) = pkg
+                        .pointer("/devDependencies/typescript")
+                        .and_then(|v| v.as_str())
+                    {
+                        add(
+                            "language",
+                            "TypeScript",
+                            Some(ts_ver.into()),
+                            0.95,
+                            "package.json",
+                        );
+                    }
+
+                    // Framework detection from dependencies + devDependencies
+                    let framework_checks: &[(&str, &str)] = &[
+                        ("next", "Next.js"),
+                        ("nuxt", "Nuxt"),
+                        ("remix", "Remix"),
+                        ("react", "React"),
+                        ("vue", "Vue"),
+                        ("@angular/core", "Angular"),
+                        ("svelte", "Svelte"),
+                    ];
+
+                    let deps = pkg.get("dependencies");
+                    let dev_deps = pkg.get("devDependencies");
+
+                    for &(key, name) in framework_checks {
+                        let version = deps
+                            .and_then(|d| d.get(key))
+                            .or_else(|| dev_deps.and_then(|d| d.get(key)))
+                            .and_then(|v| v.as_str())
+                            .map(String::from);
+                        if version.is_some() {
+                            add("framework", name, version, 0.9, "package.json");
+                        }
+                    }
+                } else {
+                    tracing::debug!("Failed to parse package.json");
+                }
+            }
+        }
+
+        // ── Cargo.toml ────────────────────────────────────────────────────
+        let cargo_path = root.join("Cargo.toml");
+        if cargo_path.is_file() {
+            if let Ok(raw) = fs::read_to_string(&cargo_path) {
+                // Extract edition with simple string parsing
+                let edition = raw.lines().find_map(|line| {
+                    let trimmed = line.trim();
+                    if trimmed.starts_with("edition") {
+                        trimmed
+                            .split('=')
+                            .nth(1)
+                            .map(|v| v.trim().trim_matches('"').to_string())
+                    } else {
+                        None
+                    }
+                });
+                add("language", "Rust", edition, 0.95, "Cargo.toml");
+
+                // Framework detection
+                let cargo_frameworks: &[(&str, &str)] = &[
+                    ("tauri", "Tauri"),
+                    ("actix-web", "Actix"),
+                    ("axum", "Axum"),
+                    ("rocket", "Rocket"),
+                ];
+                for &(key, name) in cargo_frameworks {
+                    if raw.contains(key) && raw.contains("[dependencies") {
+                        add("framework", name, None, 0.8, "Cargo.toml");
                     }
                 }
-            } else {
-                tracing::debug!("Failed to parse package.json");
             }
         }
-    }
 
-    // ── Cargo.toml ────────────────────────────────────────────────────
-    let cargo_path = root.join("Cargo.toml");
-    if cargo_path.is_file() {
-        if let Ok(raw) = fs::read_to_string(&cargo_path) {
-            // Extract edition with simple string parsing
-            let edition = raw.lines().find_map(|line| {
-                let trimmed = line.trim();
-                if trimmed.starts_with("edition") {
-                    trimmed
-                        .split('=')
-                        .nth(1)
-                        .map(|v| v.trim().trim_matches('"').to_string())
-                } else {
-                    None
-                }
-            });
-            add("language", "Rust", edition, 0.95, "Cargo.toml");
+        // ── pyproject.toml ────────────────────────────────────────────────
+        let pyproject_path = root.join("pyproject.toml");
+        if pyproject_path.is_file() {
+            if let Ok(raw) = fs::read_to_string(&pyproject_path) {
+                let python_ver = raw.lines().find_map(|line| {
+                    let trimmed = line.trim();
+                    if trimmed.starts_with("requires-python") {
+                        trimmed
+                            .split('=')
+                            .next_back()
+                            .map(|v| v.trim().trim_matches('"').to_string())
+                    } else {
+                        None
+                    }
+                });
+                add("language", "Python", python_ver, 0.95, "pyproject.toml");
 
-            // Framework detection
-            let cargo_frameworks: &[(&str, &str)] = &[
-                ("tauri", "Tauri"),
-                ("actix-web", "Actix"),
-                ("axum", "Axum"),
-                ("rocket", "Rocket"),
-            ];
-            for &(key, name) in cargo_frameworks {
-                if raw.contains(&format!("{key}")) && raw.contains("[dependencies") {
-                    add("framework", name, None, 0.8, "Cargo.toml");
+                // Python framework detection
+                let py_frameworks: &[(&str, &str)] = &[
+                    ("django", "Django"),
+                    ("flask", "Flask"),
+                    ("fastapi", "FastAPI"),
+                ];
+                let raw_lower = raw.to_lowercase();
+                for &(key, name) in py_frameworks {
+                    if raw_lower.contains(key) {
+                        add("framework", name, None, 0.8, "pyproject.toml");
+                    }
                 }
             }
         }
-    }
 
-    // ── pyproject.toml ────────────────────────────────────────────────
-    let pyproject_path = root.join("pyproject.toml");
-    if pyproject_path.is_file() {
-        if let Ok(raw) = fs::read_to_string(&pyproject_path) {
-            let python_ver = raw.lines().find_map(|line| {
-                let trimmed = line.trim();
-                if trimmed.starts_with("requires-python") {
-                    trimmed
-                        .split('=')
-                        .last()
-                        .map(|v| v.trim().trim_matches('"').to_string())
-                } else {
-                    None
-                }
-            });
-            add("language", "Python", python_ver, 0.95, "pyproject.toml");
+        // ── requirements.txt ──────────────────────────────────────────────
+        // (deferred – handled after the mutable closure is dropped)
 
-            // Python framework detection
-            let py_frameworks: &[(&str, &str)] =
-                &[("django", "Django"), ("flask", "Flask"), ("fastapi", "FastAPI")];
-            let raw_lower = raw.to_lowercase();
-            for &(key, name) in py_frameworks {
-                if raw_lower.contains(key) {
-                    add("framework", name, None, 0.8, "pyproject.toml");
-                }
-            }
-        }
-    }
+        // ── go.mod ────────────────────────────────────────────────────────
+        let gomod_path = root.join("go.mod");
+        if gomod_path.is_file() {
+            if let Ok(raw) = fs::read_to_string(&gomod_path) {
+                let go_ver = raw.lines().find_map(|line| {
+                    let trimmed = line.trim();
+                    if trimmed.starts_with("go ") {
+                        Some(trimmed.strip_prefix("go ")?.trim().to_string())
+                    } else {
+                        None
+                    }
+                });
+                add("language", "Go", go_ver, 0.95, "go.mod");
 
-    // ── requirements.txt ──────────────────────────────────────────────
-    // (deferred – handled after the mutable closure is dropped)
-
-    // ── go.mod ────────────────────────────────────────────────────────
-    let gomod_path = root.join("go.mod");
-    if gomod_path.is_file() {
-        if let Ok(raw) = fs::read_to_string(&gomod_path) {
-            let go_ver = raw.lines().find_map(|line| {
-                let trimmed = line.trim();
-                if trimmed.starts_with("go ") {
-                    Some(trimmed.strip_prefix("go ")?.trim().to_string())
-                } else {
-                    None
-                }
-            });
-            add("language", "Go", go_ver, 0.95, "go.mod");
-
-            // Go framework detection
-            let go_frameworks: &[(&str, &str)] = &[
-                ("github.com/gin-gonic/gin", "Gin"),
-                ("github.com/labstack/echo", "Echo"),
-                ("github.com/gofiber/fiber", "Fiber"),
-            ];
-            for &(key, name) in go_frameworks {
-                if raw.contains(key) {
-                    add("framework", name, None, 0.85, "go.mod");
+                // Go framework detection
+                let go_frameworks: &[(&str, &str)] = &[
+                    ("github.com/gin-gonic/gin", "Gin"),
+                    ("github.com/labstack/echo", "Echo"),
+                    ("github.com/gofiber/fiber", "Fiber"),
+                ];
+                for &(key, name) in go_frameworks {
+                    if raw.contains(key) {
+                        add("framework", name, None, 0.85, "go.mod");
+                    }
                 }
             }
         }
-    }
 
-    // ── Gemfile ───────────────────────────────────────────────────────
-    let gemfile_path = root.join("Gemfile");
-    if gemfile_path.is_file() {
-        if let Ok(raw) = fs::read_to_string(&gemfile_path) {
-            let ruby_ver = raw.lines().find_map(|line| {
-                let trimmed = line.trim();
-                if trimmed.starts_with("ruby ") || trimmed.starts_with("ruby(") {
-                    // e.g. ruby '3.2.0' or ruby "3.2.0"
-                    let ver = trimmed
+        // ── Gemfile ───────────────────────────────────────────────────────
+        let gemfile_path = root.join("Gemfile");
+        if gemfile_path.is_file() {
+            if let Ok(raw) = fs::read_to_string(&gemfile_path) {
+                let ruby_ver = raw.lines().find_map(|line| {
+                    let trimmed = line.trim();
+                    if trimmed.starts_with("ruby ") || trimmed.starts_with("ruby(") {
+                        // e.g. ruby '3.2.0' or ruby "3.2.0"
+                        let ver = trimmed.split(['\'', '"']).nth(1).map(String::from);
+                        ver
+                    } else {
+                        None
+                    }
+                });
+                add("language", "Ruby", ruby_ver, 0.95, "Gemfile");
+
+                // Rails detection
+                if let Some(line) = raw
+                    .lines()
+                    .find(|l| l.contains("'rails'") || l.contains("\"rails\""))
+                {
+                    let rails_ver = line
                         .split(['\'', '"'])
-                        .nth(1)
-                        .map(String::from);
-                    ver
-                } else {
-                    None
+                        .nth(3)
+                        .map(|v| v.trim().to_string())
+                        .filter(|v| !v.is_empty());
+                    add("framework", "Rails", rails_ver, 0.9, "Gemfile");
                 }
-            });
-            add("language", "Ruby", ruby_ver, 0.95, "Gemfile");
-
-            // Rails detection
-            if let Some(line) = raw.lines().find(|l| l.contains("'rails'") || l.contains("\"rails\"")) {
-                let rails_ver = line
-                    .split(['\'', '"'])
-                    .nth(3)
-                    .map(|v| v.trim().to_string())
-                    .filter(|v| !v.is_empty());
-                add("framework", "Rails", rails_ver, 0.9, "Gemfile");
             }
         }
-    }
 
-    // ── pubspec.yaml ─────────────────────────────────────────────────
-    let pubspec_path = root.join("pubspec.yaml");
-    if pubspec_path.is_file() {
-        if let Ok(raw) = fs::read_to_string(&pubspec_path) {
-            if raw.contains("flutter:") || raw.contains("flutter_") {
-                add("framework", "Flutter", None, 0.9, "pubspec.yaml");
-            } else {
-                add("framework", "Dart", None, 0.85, "pubspec.yaml");
+        // ── pubspec.yaml ─────────────────────────────────────────────────
+        let pubspec_path = root.join("pubspec.yaml");
+        if pubspec_path.is_file() {
+            if let Ok(raw) = fs::read_to_string(&pubspec_path) {
+                if raw.contains("flutter:") || raw.contains("flutter_") {
+                    add("framework", "Flutter", None, 0.9, "pubspec.yaml");
+                } else {
+                    add("framework", "Dart", None, 0.85, "pubspec.yaml");
+                }
             }
         }
-    }
 
-    // ── build.gradle / build.gradle.kts ──────────────────────────────
-    let gradle_path = root.join("build.gradle");
-    let gradle_kts_path = root.join("build.gradle.kts");
-    if gradle_kts_path.is_file() {
-        add("language", "Kotlin", None, 0.85, "build.gradle.kts");
-    } else if gradle_path.is_file() {
-        add("language", "Java", None, 0.85, "build.gradle");
-    }
+        // ── build.gradle / build.gradle.kts ──────────────────────────────
+        let gradle_path = root.join("build.gradle");
+        let gradle_kts_path = root.join("build.gradle.kts");
+        if gradle_kts_path.is_file() {
+            add("language", "Kotlin", None, 0.85, "build.gradle.kts");
+        } else if gradle_path.is_file() {
+            add("language", "Java", None, 0.85, "build.gradle");
+        }
 
-    // ── Dockerfile ───────────────────────────────────────────────────
-    if root.join("Dockerfile").is_file() || root.join("dockerfile").is_file() {
-        add("tool", "Docker", None, 0.95, "Dockerfile");
-    }
+        // ── Dockerfile ───────────────────────────────────────────────────
+        if root.join("Dockerfile").is_file() || root.join("dockerfile").is_file() {
+            add("tool", "Docker", None, 0.95, "Dockerfile");
+        }
 
-    // ── docker-compose.yml ───────────────────────────────────────────
-    if root.join("docker-compose.yml").is_file() || root.join("docker-compose.yaml").is_file() {
-        add(
-            "tool",
-            "Docker Compose",
-            None,
-            0.95,
-            "docker-compose.yml",
-        );
-    }
+        // ── docker-compose.yml ───────────────────────────────────────────
+        if root.join("docker-compose.yml").is_file() || root.join("docker-compose.yaml").is_file() {
+            add("tool", "Docker Compose", None, 0.95, "docker-compose.yml");
+        }
 
-    // ── GitHub Actions ───────────────────────────────────────────────
-    let workflows_dir = root.join(".github").join("workflows");
-    if workflows_dir.is_dir() {
-        let has_yml = fs::read_dir(&workflows_dir)
-            .ok()
-            .map(|rd| {
-                rd.filter_map(|e| e.ok())
-                    .any(|e| {
+        // ── GitHub Actions ───────────────────────────────────────────────
+        let workflows_dir = root.join(".github").join("workflows");
+        if workflows_dir.is_dir() {
+            let has_yml = fs::read_dir(&workflows_dir)
+                .ok()
+                .map(|rd| {
+                    rd.filter_map(|e| e.ok()).any(|e| {
                         let n = e.file_name();
                         let n = n.to_string_lossy();
                         n.ends_with(".yml") || n.ends_with(".yaml")
                     })
-            })
-            .unwrap_or(false);
-        if has_yml {
-            add(
-                "tool",
-                "GitHub Actions",
-                None,
-                0.95,
-                ".github/workflows/*.yml",
-            );
+                })
+                .unwrap_or(false);
+            if has_yml {
+                add(
+                    "tool",
+                    "GitHub Actions",
+                    None,
+                    0.95,
+                    ".github/workflows/*.yml",
+                );
+            }
         }
-    }
 
-    // ── tsconfig.json ────────────────────────────────────────────────
-    // (deferred – handled after the mutable closure is dropped)
+        // ── tsconfig.json ────────────────────────────────────────────────
+        // (deferred – handled after the mutable closure is dropped)
 
-    // ── Tailwind CSS ─────────────────────────────────────────────────
-    if has_glob_match(root, "tailwind.config") {
-        add("styling", "Tailwind CSS", None, 0.9, "tailwind.config.*");
-    }
+        // ── Tailwind CSS ─────────────────────────────────────────────────
+        if has_glob_match(root, "tailwind.config") {
+            add("styling", "Tailwind CSS", None, 0.9, "tailwind.config.*");
+        }
 
-    // ── Vite ─────────────────────────────────────────────────────────
-    if has_glob_match(root, "vite.config") {
-        add("tool", "Vite", None, 0.9, "vite.config.*");
-    }
+        // ── Vite ─────────────────────────────────────────────────────────
+        if has_glob_match(root, "vite.config") {
+            add("tool", "Vite", None, 0.9, "vite.config.*");
+        }
 
-    // ── Webpack ──────────────────────────────────────────────────────
-    if has_glob_match(root, "webpack.config") {
-        add("tool", "Webpack", None, 0.9, "webpack.config.*");
-    }
+        // ── Webpack ──────────────────────────────────────────────────────
+        if has_glob_match(root, "webpack.config") {
+            add("tool", "Webpack", None, 0.9, "webpack.config.*");
+        }
 
-    // ── ESLint ───────────────────────────────────────────────────────
-    if has_glob_match(root, ".eslintrc") || has_glob_match(root, "eslint.config") {
-        add("tool", "ESLint", None, 0.9, ".eslintrc* / eslint.config.*");
-    }
+        // ── ESLint ───────────────────────────────────────────────────────
+        if has_glob_match(root, ".eslintrc") || has_glob_match(root, "eslint.config") {
+            add("tool", "ESLint", None, 0.9, ".eslintrc* / eslint.config.*");
+        }
 
-    // ── Jest / Vitest ────────────────────────────────────────────────
-    if has_glob_match(root, "jest.config") {
-        add("testing", "Jest", None, 0.9, "jest.config.*");
-    }
-    if has_glob_match(root, "vitest.config") {
-        add("testing", "Vitest", None, 0.9, "vitest.config.*");
-    }
-
-    // Drop the mutable closure so we can read `entries` again.
-    drop(add);
+        // ── Jest / Vitest ────────────────────────────────────────────────
+        if has_glob_match(root, "jest.config") {
+            add("testing", "Jest", None, 0.9, "jest.config.*");
+        }
+        if has_glob_match(root, "vitest.config") {
+            add("testing", "Vitest", None, 0.9, "vitest.config.*");
+        }
+    } // `add` closure goes out of scope here
 
     // ── Deferred: requirements.txt (avoid duplicate Python) ──────────
     let req_path = root.join("requirements.txt");
