@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { clsx } from "clsx";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface TabItem {
   id: string;
@@ -18,7 +19,7 @@ export function TabGroup({ tabs, defaultTab }: TabGroupProps) {
 
   return (
     <div>
-      <div className="flex gap-1 border-b border-zinc-800" role="tablist">
+      <div className="relative flex gap-1 border-b border-zinc-800" role="tablist">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -28,20 +29,35 @@ export function TabGroup({ tabs, defaultTab }: TabGroupProps) {
             aria-controls={`panel-${tab.id}`}
             onClick={() => setActiveTab(tab.id)}
             className={clsx(
-              "px-4 py-2.5 text-sm font-medium transition-colors",
-              "-mb-px border-b-2",
-              activeTab === tab.id
-                ? "border-indigo-500 text-indigo-400"
-                : "border-transparent text-zinc-500 hover:text-zinc-300",
+              "relative px-4 py-2.5 text-sm font-medium transition-colors",
+              activeTab === tab.id ? "text-indigo-400" : "text-zinc-500 hover:text-zinc-300",
             )}
           >
             {tab.label}
+            {activeTab === tab.id && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute inset-x-0 -bottom-px h-0.5 bg-gradient-to-r from-indigo-500 to-indigo-400"
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              />
+            )}
           </button>
         ))}
       </div>
-      <div className="pt-4" role="tabpanel" id={`panel-${activeTab}`}>
-        {activeContent}
-      </div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.15 }}
+          className="pt-4"
+          role="tabpanel"
+          id={`panel-${activeTab}`}
+        >
+          {activeContent}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

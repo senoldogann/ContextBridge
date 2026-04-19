@@ -3,6 +3,7 @@ import { MainContent } from "@/components/layout/MainContent";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { UpdateChecker } from "@/components/ui/UpdateChecker";
 import { useProjectStore } from "@/stores/projectStore";
+import { Toaster } from "sonner";
 
 function ErrorBanner() {
   const error = useProjectStore((s) => s.error);
@@ -11,7 +12,7 @@ function ErrorBanner() {
   if (!error) return null;
 
   return (
-    <div className="flex items-center justify-between bg-red-900/50 px-4 py-2 text-sm text-red-200">
+    <div className="flex items-center justify-between bg-red-900/50 px-4 py-2 text-sm text-red-200 backdrop-blur-sm">
       <span>{error}</span>
       <button
         type="button"
@@ -26,15 +27,18 @@ function ErrorBanner() {
 
 export function App() {
   return (
-    <div className="flex h-screen bg-zinc-950 text-zinc-100">
+    <div className="relative flex h-screen bg-zinc-950 text-zinc-100">
+      {/* Subtle gradient background */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-950/20 via-zinc-950 to-zinc-950" />
       <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="relative flex flex-1 flex-col overflow-hidden">
         <UpdateChecker />
         <ErrorBanner />
         <ErrorBoundary>
           <MainContent />
         </ErrorBoundary>
       </div>
+      <Toaster theme="dark" richColors position="top-right" />
     </div>
   );
 }

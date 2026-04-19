@@ -13,6 +13,8 @@ import {
   XCircle,
 } from "lucide-react";
 import { clsx } from "clsx";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { useProjectStore } from "@/stores/projectStore";
 import { useNavigationStore } from "@/stores/navigationStore";
 import { TabGroup } from "@/components/ui/Tab";
@@ -151,8 +153,8 @@ function NotesTab() {
 
   const handleDelete = async (noteId: string) => {
     if (!projectId) return;
-    if (!window.confirm("Delete this note?")) return;
     await deleteNote(projectId, noteId);
+    toast.success("Note deleted");
   };
 
   const priorityBadge = (p: number) => {
@@ -526,8 +528,13 @@ export function ProjectDetail() {
 
   return (
     <main className="flex flex-1 flex-col overflow-hidden">
-      <header className="border-b border-zinc-800 px-6 py-4">
-        <div className="flex items-center gap-3">
+      <header className="border-b border-zinc-800/50 px-6 py-4">
+        <motion.div
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+          className="flex items-center gap-3"
+        >
           <button
             type="button"
             onClick={() => navigate("dashboard")}
@@ -550,7 +557,7 @@ export function ProjectDetail() {
             <RefreshCw size={14} className={clsx(refreshing && "animate-spin")} />
             {refreshing ? "Scanning…" : "Refresh"}
           </Button>
-        </div>
+        </motion.div>
       </header>
 
       <div className="flex-1 overflow-y-auto p-6">

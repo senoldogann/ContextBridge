@@ -67,7 +67,7 @@ export function UpdateChecker() {
   if (dismissed || state.phase === "idle") return null;
 
   return (
-    <div className="flex items-center justify-between bg-blue-900/60 px-4 py-2 text-sm text-blue-100">
+    <div className="flex items-center justify-between bg-blue-900/40 px-4 py-2 text-sm text-blue-100 ring-1 ring-blue-500/20 backdrop-blur-sm">
       {state.phase === "available" && (
         <>
           <span>Update available: v{state.version}</span>
@@ -75,14 +75,14 @@ export function UpdateChecker() {
             <button
               type="button"
               onClick={handleUpdate}
-              className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-500"
+              className="rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-3 py-1 text-xs font-medium text-white shadow-lg shadow-blue-500/25 transition-all hover:from-blue-500 hover:to-blue-400"
             >
               Update Now
             </button>
             <button
               type="button"
               onClick={() => setDismissed(true)}
-              className="rounded px-3 py-1 text-xs text-blue-300 hover:bg-blue-800"
+              className="rounded-lg px-3 py-1 text-xs text-blue-300 transition-colors hover:bg-blue-800/50"
             >
               Later
             </button>
@@ -93,9 +93,9 @@ export function UpdateChecker() {
       {state.phase === "downloading" && (
         <div className="flex w-full items-center gap-3">
           <span>Downloading update…</span>
-          <div className="h-2 flex-1 rounded-full bg-blue-950">
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-blue-950">
             <div
-              className="h-2 rounded-full bg-blue-400 transition-all"
+              className="h-2 rounded-full bg-gradient-to-r from-blue-400 to-indigo-400 transition-all duration-300"
               style={{ width: `${state.progress}%` }}
             />
           </div>

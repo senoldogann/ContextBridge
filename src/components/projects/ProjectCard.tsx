@@ -1,5 +1,6 @@
 import { clsx } from "clsx";
 import { Folder } from "lucide-react";
+import { motion } from "framer-motion";
 import type { Project } from "@/types";
 
 interface ProjectCardProps {
@@ -10,12 +11,16 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project, isSelected, onSelect }: ProjectCardProps) {
   return (
-    <button
+    <motion.button
       type="button"
       onClick={onSelect}
+      whileHover={{ x: 2 }}
+      transition={{ duration: 0.15 }}
       className={clsx(
-        "flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
-        isSelected ? "bg-indigo-600/20 text-zinc-100" : "text-zinc-400 hover:bg-zinc-800",
+        "flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-150",
+        isSelected
+          ? "bg-indigo-600/15 text-zinc-100 ring-1 ring-indigo-500/20"
+          : "text-zinc-400 hover:bg-zinc-800/80",
       )}
     >
       <Folder
@@ -29,6 +34,6 @@ export function ProjectCard({ project, isSelected, onSelect }: ProjectCardProps)
           Updated {new Date(project.updated_at).toLocaleDateString()}
         </p>
       </div>
-    </button>
+    </motion.button>
   );
 }
