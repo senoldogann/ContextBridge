@@ -47,11 +47,8 @@ export function Sidebar() {
       {/* Gradient border effect on right edge */}
       <div className="absolute top-0 right-0 bottom-0 w-px bg-gradient-to-b from-indigo-500/20 via-zinc-800/50 to-indigo-500/20" />
 
-      {/* Drag region */}
-      <div data-tauri-drag-region className="h-8 shrink-0" />
-
       {/* App logo */}
-      <div className="flex items-center justify-between px-4 pb-3">
+      <div className="flex items-center justify-between px-4 pt-3 pb-3">
         <h1 className="bg-gradient-to-r from-indigo-400 to-indigo-300 bg-clip-text text-sm font-bold tracking-wide text-transparent">
           ContextBridge
         </h1>

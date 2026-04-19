@@ -2,6 +2,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { MainContent } from "@/components/layout/MainContent";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { UpdateChecker } from "@/components/ui/UpdateChecker";
+import { TitleBar } from "@/components/ui/TitleBar";
 import { useProjectStore } from "@/stores/projectStore";
 import { Toaster } from "sonner";
 
@@ -27,16 +28,19 @@ function ErrorBanner() {
 
 export function App() {
   return (
-    <div className="relative flex h-screen bg-zinc-950 text-zinc-100">
+    <div className="relative flex h-screen flex-col overflow-hidden rounded-lg border border-zinc-800/60 bg-zinc-950 text-zinc-100">
       {/* Subtle gradient background */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-950/20 via-zinc-950 to-zinc-950" />
-      <Sidebar />
-      <div className="relative flex flex-1 flex-col overflow-hidden">
-        <UpdateChecker />
-        <ErrorBanner />
-        <ErrorBoundary>
-          <MainContent />
-        </ErrorBoundary>
+      <TitleBar />
+      <div className="relative flex flex-1 overflow-hidden">
+        <Sidebar />
+        <div className="relative flex flex-1 flex-col overflow-hidden">
+          <UpdateChecker />
+          <ErrorBanner />
+          <ErrorBoundary>
+            <MainContent />
+          </ErrorBoundary>
+        </div>
       </div>
       <Toaster theme="dark" richColors position="top-right" />
     </div>
