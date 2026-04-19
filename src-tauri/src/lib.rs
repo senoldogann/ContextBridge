@@ -10,7 +10,7 @@ pub mod core;
 pub mod db;
 pub mod errors;
 #[allow(unused)] // Phase 3: wired into commands
-mod output;
+pub mod output;
 pub mod state;
 
 use core::watcher::WatcherSupervisor;
