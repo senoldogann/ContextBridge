@@ -125,14 +125,14 @@ function NotesTab() {
   const deleteNote = useProjectStore((s) => s.deleteNote);
 
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ category: "general", title: "", content: "", priority: 0 });
+  const [form, setForm] = useState({ category: "other", title: "", content: "", priority: 0 });
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const notes = context?.notes ?? [];
   const projectId = context?.project.id;
 
   const grouped = notes.reduce<Record<string, ContextNote[]>>((acc, note) => {
-    const cat = note.category || "general";
+    const cat = note.category || "other";
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(note);
     return acc;
@@ -145,7 +145,7 @@ function NotesTab() {
     if (!trimmedTitle) return;
     const clampedPriority = Math.max(0, Math.min(10, form.priority));
     await addNote(projectId, form.category, trimmedTitle, trimmedContent, clampedPriority);
-    setForm({ category: "general", title: "", content: "", priority: 0 });
+    setForm({ category: "other", title: "", content: "", priority: 0 });
     setShowForm(false);
   };
 
@@ -180,13 +180,19 @@ function NotesTab() {
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
                 className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 focus:border-indigo-500 focus:outline-none"
               >
-                {["general", "architecture", "conventions", "deployment", "testing", "api"].map(
-                  (c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ),
-                )}
+                {[
+                  "architecture",
+                  "conventions",
+                  "dependencies",
+                  "patterns",
+                  "testing",
+                  "deployment",
+                  "other",
+                ].map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
               </select>
             </div>
             <div>

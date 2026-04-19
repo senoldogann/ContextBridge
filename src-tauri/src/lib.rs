@@ -9,7 +9,6 @@ mod commands;
 pub mod core;
 pub mod db;
 pub mod errors;
-#[allow(unused)] // Phase 3: wired into commands
 pub mod output;
 pub mod state;
 
