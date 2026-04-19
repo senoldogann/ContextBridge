@@ -14,15 +14,18 @@ export function Card({ children, className, onClick, hoverable = false }: CardPr
       type={onClick ? "button" : undefined}
       onClick={onClick}
       className={clsx(
-        "relative rounded-xl border border-zinc-800/50 bg-zinc-900/80 p-4 backdrop-blur-sm",
-        "shadow-lg ring-1 shadow-black/20 ring-zinc-800/50",
-        "transition-all duration-200",
-        hoverable &&
-          "cursor-pointer hover:scale-[1.01] hover:bg-zinc-800/80 hover:shadow-xl hover:shadow-black/30 hover:ring-zinc-700/50",
-        onClick &&
-          "w-full cursor-pointer text-left hover:scale-[1.01] hover:bg-zinc-800/80 hover:shadow-xl hover:shadow-black/30 hover:ring-zinc-700/50",
+        "theme-transition relative rounded-xl p-4 backdrop-blur-sm",
+        "shadow-lg transition-all duration-200",
+        hoverable && "cursor-pointer hover:scale-[1.01] hover:shadow-xl",
+        onClick && "w-full cursor-pointer text-left hover:scale-[1.01] hover:shadow-xl",
         className,
       )}
+      style={{
+        background: "var(--bg-elevated)",
+        border: "1px solid var(--border)",
+        color: "var(--text-primary)",
+        boxShadow: "var(--shadow-card)",
+      }}
     >
       {children}
     </Component>

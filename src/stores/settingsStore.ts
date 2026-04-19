@@ -32,8 +32,14 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       const autoSync = await tauri.getSetting("auto_sync");
       const adapters = await tauri.getSetting("enabled_adapters");
 
+      const resolvedTheme = theme === "light" ? "light" : "dark";
+      const isLight = resolvedTheme === "light";
+      document.documentElement.classList.toggle("light", isLight);
+      document.documentElement.classList.toggle("dark", !isLight);
+      localStorage.setItem("cb:theme", resolvedTheme);
+
       set({
-        theme: theme === "light" ? "light" : "dark",
+        theme: resolvedTheme,
         autoSync: autoSync !== "false",
         enabledAdapters: adapters ? parseStringArray(adapters, DEFAULT_ADAPTERS) : DEFAULT_ADAPTERS,
       });
@@ -47,7 +53,12 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       await tauri.setSetting(key, value);
 
       if (key === "theme") {
-        set({ theme: value === "light" ? "light" : "dark" });
+        const isLight = value === "light";
+        set({ theme: isLight ? "light" : "dark" });
+        // Sync to DOM + localStorage immediately
+        document.documentElement.classList.toggle("light", isLight);
+        document.documentElement.classList.toggle("dark", !isLight);
+        localStorage.setItem("cb:theme", value);
       } else if (key === "auto_sync") {
         set({ autoSync: value !== "false" });
       } else if (key === "enabled_adapters") {

@@ -17,13 +17,19 @@ export function EmptyState() {
         <motion.div
           animate={{ y: [0, -6, 0] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          className="rounded-full bg-gradient-to-br from-indigo-600/20 to-indigo-500/10 p-5 shadow-lg ring-1 shadow-indigo-500/10 ring-indigo-500/20"
+          className="rounded-full p-5"
+          style={{
+            background: "var(--primary-muted)",
+            boxShadow: `0 4px 24px var(--primary-ring), inset 0 0 0 1px var(--primary-ring)`,
+          }}
         >
-          <FolderOpen size={32} className="text-indigo-400" />
+          <FolderOpen size={32} style={{ color: "var(--primary)" }} />
         </motion.div>
         <div>
-          <h2 className="text-lg font-semibold text-zinc-200">No projects yet</h2>
-          <p className="mt-1 max-w-xs text-sm text-zinc-500">
+          <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+            No projects yet
+          </h2>
+          <p className="mt-1 max-w-xs text-sm" style={{ color: "var(--text-muted)" }}>
             Add your first project to start generating AI-ready context files.
           </p>
         </div>

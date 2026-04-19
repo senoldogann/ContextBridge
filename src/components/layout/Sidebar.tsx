@@ -43,23 +43,38 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="relative flex h-full w-72 flex-col border-r border-zinc-800/50 bg-zinc-900/80 backdrop-blur-xl">
-      {/* Gradient border effect on right edge */}
-      <div className="absolute top-0 right-0 bottom-0 w-px bg-gradient-to-b from-indigo-500/20 via-zinc-800/50 to-indigo-500/20" />
+    <aside
+      className="theme-transition relative flex h-full w-72 flex-col"
+      style={{ background: "var(--bg-surface)", borderRight: "1px solid var(--border)" }}
+    >
+      {/* Gradient accent on right edge */}
+      <div
+        className="absolute top-0 right-0 bottom-0 w-px"
+        style={{
+          background:
+            "linear-gradient(to bottom, var(--primary-ring), transparent, var(--primary-ring))",
+          opacity: 0.6,
+        }}
+      />
 
       {/* App logo */}
       <div className="flex items-center justify-between px-4 pt-3 pb-3">
-        <h1 className="bg-gradient-to-r from-indigo-400 to-indigo-300 bg-clip-text text-sm font-bold tracking-wide text-transparent">
+        <h1 className="text-sm font-bold tracking-wide" style={{ color: "var(--primary)" }}>
           ContextBridge
         </h1>
         <button
           type="button"
           onClick={handleAddProject}
-          className={clsx(
-            "rounded-md p-1.5 text-zinc-400 transition-all duration-150",
-            "hover:scale-105 hover:bg-zinc-800 hover:text-zinc-200",
-            "active:scale-95",
-          )}
+          className="rounded-md p-1.5 transition-all duration-150 hover:scale-105 active:scale-95"
+          style={{ color: "var(--text-muted)" }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.background = "var(--bg-hover)";
+            (e.currentTarget as HTMLElement).style.color = "var(--text-primary)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.background = "transparent";
+            (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
+          }}
           aria-label="Add project"
         >
           <Plus size={16} />
@@ -68,7 +83,9 @@ export function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto px-2 pb-2">
         {projects.length === 0 ? (
-          <p className="px-2 py-4 text-center text-xs text-zinc-500">No projects yet</p>
+          <p className="px-2 py-4 text-center text-xs" style={{ color: "var(--text-muted)" }}>
+            No projects yet
+          </p>
         ) : (
           <ul className="space-y-1">
             {projects.map((project) => (
@@ -87,7 +104,16 @@ export function Sidebar() {
                       e.stopPropagation();
                       setConfirmRemove(project.id);
                     }}
-                    className="absolute top-2.5 right-2 hidden rounded-md p-1 text-zinc-600 transition-colors group-hover:block hover:bg-zinc-700 hover:text-red-400"
+                    className="absolute top-2.5 right-2 hidden rounded-md p-1 transition-colors group-hover:block"
+                    style={{ color: "var(--text-muted)" }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = "var(--bg-hover)";
+                      (e.currentTarget as HTMLElement).style.color = "#f87171";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = "transparent";
+                      (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
+                    }}
                     aria-label={`Remove project ${project.name}`}
                   >
                     <Trash2 size={12} />
@@ -99,7 +125,7 @@ export function Sidebar() {
         )}
       </nav>
 
-      <div className="border-t border-zinc-800/50 p-2">
+      <div className="p-2" style={{ borderTop: "1px solid var(--border)" }}>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentView === item.view;
@@ -110,16 +136,25 @@ export function Sidebar() {
               onClick={() => navigate(item.view)}
               className={clsx(
                 "relative flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all duration-150",
-                isActive
-                  ? "bg-indigo-600/20 text-indigo-400"
-                  : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200",
               )}
+              style={{ color: isActive ? "var(--primary)" : "var(--text-muted)" }}
+              onMouseEnter={(e) => {
+                if (!isActive)
+                  (e.currentTarget as HTMLElement).style.background = "var(--bg-hover)";
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent";
+              }}
               aria-label={item.label}
             >
               {isActive && (
                 <motion.div
                   layoutId="activeNav"
-                  className="absolute inset-0 rounded-lg bg-indigo-600/10 ring-1 ring-indigo-500/20"
+                  className="absolute inset-0 rounded-lg"
+                  style={{
+                    background: "var(--bg-active)",
+                    boxShadow: `inset 0 0 0 1px var(--border-active)`,
+                  }}
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}

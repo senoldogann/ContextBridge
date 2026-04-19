@@ -1,9 +1,14 @@
+import { useState, useEffect } from "react";
+import { AnimatePresence } from "framer-motion";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MainContent } from "@/components/layout/MainContent";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { UpdateChecker } from "@/components/ui/UpdateChecker";
 import { TitleBar } from "@/components/ui/TitleBar";
+import { SplashScreen } from "@/components/ui/SplashScreen";
+import { OnboardingGuide } from "@/components/ui/OnboardingGuide";
 import { useProjectStore } from "@/stores/projectStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 import { Toaster } from "sonner";
 
 function ErrorBanner() {
@@ -27,22 +32,61 @@ function ErrorBanner() {
 }
 
 export function App() {
+  const [splashDone, setSplashDone] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const theme = useSettingsStore((s) => s.theme);
+  const loadSettings = useSettingsStore((s) => s.loadSettings);
+
+  useEffect(() => {
+    void loadSettings();
+  }, [loadSettings]);
+
+  const toasterTheme = theme === "light" ? "light" : "dark";
+
+  const handleSplashDone = () => {
+    setSplashDone(true);
+    const onboardingDone = localStorage.getItem("cb:onboarding-done");
+    if (!onboardingDone) setShowOnboarding(true);
+  };
+
   return (
-    <div className="relative flex h-screen flex-col overflow-hidden rounded-lg border border-zinc-800/60 bg-zinc-950 text-zinc-100">
-      {/* Subtle gradient background */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-950/20 via-zinc-950 to-zinc-950" />
-      <TitleBar />
-      <div className="relative flex flex-1 overflow-hidden">
-        <Sidebar />
-        <div className="relative flex flex-1 flex-col overflow-hidden">
-          <UpdateChecker />
-          <ErrorBanner />
-          <ErrorBoundary>
-            <MainContent />
-          </ErrorBoundary>
-        </div>
-      </div>
-      <Toaster theme="dark" richColors position="top-right" />
+    <div
+      className="theme-transition relative flex h-screen flex-col overflow-hidden rounded-lg"
+      style={{
+        background: "var(--bg-base)",
+        color: "var(--text-primary)",
+        border: "1px solid var(--border-strong)",
+      }}
+    >
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-950/10 via-transparent to-transparent" />
+
+      <AnimatePresence>
+        {!splashDone && <SplashScreen key="splash" onComplete={handleSplashDone} />}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {splashDone && showOnboarding && (
+          <OnboardingGuide key="onboarding" onClose={() => setShowOnboarding(false)} />
+        )}
+      </AnimatePresence>
+
+      {splashDone && (
+        <>
+          <TitleBar />
+          <div className="relative flex flex-1 overflow-hidden">
+            <Sidebar />
+            <div className="relative flex flex-1 flex-col overflow-hidden">
+              <UpdateChecker />
+              <ErrorBanner />
+              <ErrorBoundary>
+                <MainContent />
+              </ErrorBoundary>
+            </div>
+          </div>
+        </>
+      )}
+
+      <Toaster theme={toasterTheme} richColors position="top-right" />
     </div>
   );
 }

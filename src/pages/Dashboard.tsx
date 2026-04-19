@@ -38,12 +38,14 @@ export function Dashboard() {
   }
 
   return (
-    <main className="flex flex-1 flex-col overflow-hidden">
-      <header className="border-b border-zinc-800/50 px-6 py-4">
+    <main className="theme-transition flex flex-1 flex-col overflow-hidden">
+      <header className="px-6 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold">Dashboard</h2>
-            <p className="mt-0.5 text-xs text-zinc-400">
+            <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+              Dashboard
+            </h2>
+            <p className="mt-0.5 text-xs" style={{ color: "var(--text-muted)" }}>
               {projects.length} project{projects.length !== 1 ? "s" : ""} registered
             </p>
           </div>
@@ -61,15 +63,36 @@ export function Dashboard() {
               animate="visible"
             >
               <Card hoverable onClick={() => handleOpenProject(project.id)}>
-                {/* Gradient accent strip */}
-                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
+                <div
+                  className="absolute inset-x-0 top-0 h-px"
+                  style={{
+                    background:
+                      "linear-gradient(to right, transparent, var(--primary), transparent)",
+                    opacity: 0.4,
+                  }}
+                />
                 <div className="relative flex items-start gap-3">
-                  <div className="rounded-lg bg-gradient-to-br from-indigo-600/20 to-indigo-500/10 p-2 ring-1 ring-indigo-500/20">
-                    <FolderOpen size={18} className="text-indigo-400" />
+                  <div
+                    className="rounded-lg p-2"
+                    style={{
+                      background: "var(--primary-muted)",
+                      boxShadow: `inset 0 0 0 1px var(--primary-ring)`,
+                    }}
+                  >
+                    <FolderOpen size={18} style={{ color: "var(--primary)" }} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-sm font-semibold text-zinc-100">{project.name}</h3>
-                    <p className="mt-0.5 truncate text-xs text-zinc-500" title={project.root_path}>
+                    <h3
+                      className="truncate text-sm font-semibold"
+                      style={{ color: "var(--text-primary)" }}
+                    >
+                      {project.name}
+                    </h3>
+                    <p
+                      className="mt-0.5 truncate text-xs"
+                      style={{ color: "var(--text-muted)" }}
+                      title={project.root_path}
+                    >
                       {project.root_path}
                     </p>
                   </div>
@@ -77,8 +100,8 @@ export function Dashboard() {
 
                 <div className="mt-3 flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <Activity size={12} className="text-zinc-500" />
-                    <span className="text-[10px] text-zinc-500">
+                    <Activity size={12} style={{ color: "var(--text-muted)" }} />
+                    <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
                       Updated {new Date(project.updated_at).toLocaleDateString()}
                     </span>
                   </div>
@@ -92,12 +115,30 @@ export function Dashboard() {
           <motion.button
             type="button"
             onClick={handleAddProject}
-            className="group flex min-h-[120px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-700/50 bg-transparent p-4 text-zinc-500 transition-all duration-200 hover:border-indigo-500/50 hover:text-zinc-300 hover:shadow-lg hover:shadow-indigo-500/5"
+            className="group flex min-h-[120px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 transition-all duration-200"
+            style={{
+              borderColor: "var(--border-dashed)",
+              color: "var(--text-muted)",
+              background: "transparent",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.borderColor = "var(--primary-ring)";
+              (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
+              (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-hover)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.borderColor = "var(--border-dashed)";
+              (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
+              (e.currentTarget as HTMLElement).style.boxShadow = "none";
+            }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             aria-label="Add new project"
           >
-            <div className="rounded-full bg-zinc-800/50 p-2 transition-colors group-hover:bg-indigo-600/20">
+            <div
+              className="rounded-full p-2 transition-colors"
+              style={{ background: "var(--bg-hover)" }}
+            >
               <Plus size={24} />
             </div>
             <span className="text-sm font-medium">Add Project</span>
