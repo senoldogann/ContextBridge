@@ -64,27 +64,27 @@ ContextBridge is a **Tauri v2** application with a Cargo workspace of 3 crates:
 File Watcher → Context Engine → SQLite (WAL + FTS5) → Output Formatters → AI Config Files
 ```
 
-| Crate                | Purpose                              |
-| -------------------- | ------------------------------------ |
-| `contextbridge`      | Main Tauri app (commands, core, DB)  |
-| `contextbridge-core` | Shared types and trait definitions   |
-| `contextbridge-mcp`  | Standalone MCP server binary         |
+| Crate                | Purpose                             |
+| -------------------- | ----------------------------------- |
+| `contextbridge`      | Main Tauri app (commands, core, DB) |
+| `contextbridge-core` | Shared types and trait definitions  |
+| `contextbridge-mcp`  | Standalone MCP server binary        |
 
 📖 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full deep-dive.
 
 ## Tech Stack
 
-| Layer       | Technology                          |
-| ----------- | ----------------------------------- |
-| Framework   | Tauri v2                            |
-| Backend     | Rust (tokio, rusqlite, notify)      |
-| Frontend    | React 19 + TypeScript + Vite        |
-| Database    | SQLite (WAL + FTS5)                 |
-| State       | Zustand (UI only)                   |
-| Styling     | CSS + clsx                          |
-| Icons       | Lucide React                        |
-| Testing     | Vitest + Playwright + cargo test    |
-| CI/CD       | GitHub Actions (4-platform matrix)  |
+| Layer     | Technology                         |
+| --------- | ---------------------------------- |
+| Framework | Tauri v2                           |
+| Backend   | Rust (tokio, rusqlite, notify)     |
+| Frontend  | React 19 + TypeScript + Vite       |
+| Database  | SQLite (WAL + FTS5)                |
+| State     | Zustand (UI only)                  |
+| Styling   | CSS + clsx                         |
+| Icons     | Lucide React                       |
+| Testing   | Vitest + Playwright + cargo test   |
+| CI/CD     | GitHub Actions (4-platform matrix) |
 
 ## Roadmap
 
@@ -92,11 +92,13 @@ File Watcher → Context Engine → SQLite (WAL + FTS5) → Output Formatters �
 - [x] SQLite with WAL + FTS5
 - [x] File watcher + Context Engine
 - [x] Output formatters (Claude, Copilot, Cursor, Codex)
-- [x] CI/CD pipeline
+- [x] MCP server (JSON-RPC 2.0 over stdio)
+- [x] Sync engine with content-hash dedup
+- [x] CI/CD pipeline (4-platform matrix)
 - [ ] Project management UI
-- [ ] Rule editor for custom context rules
-- [ ] Settings panel
-- [ ] MCP server implementation
+- [ ] Context rule editor
+- [ ] Settings panel (theme, adapters, watch paths)
+- [ ] Context summarization (local LLM)
 - [ ] Auto-update support
 - [ ] Plugin system for custom output formats
 
@@ -106,4 +108,4 @@ Contributions are welcome! Please read the [Contributing Guide](docs/CONTRIBUTIN
 
 ## License
 
-[MIT](LICENSE) © 2025 Senol Dogan
+[MIT](LICENSE) © 2025–2026 Senol Dogan

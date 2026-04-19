@@ -1,0 +1,13 @@
+# Default owner for everything
+* @senoldogann
+
+# Rust backend
+/src-tauri/ @senoldogann
+/contextbridge-core/ @senoldogann
+/contextbridge-mcp/ @senoldogann
+
+# Frontend
+/src/ @senoldogann
+
+# CI/CD
+/.github/ @senoldogann

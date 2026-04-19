@@ -1,9 +1,51 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
 target/
+
+# Database files
 *.db
 *.db-wal
 *.db-shm
+
+# OS files
 .DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
 *.log
+npm-debug.log*
+
+# Test & coverage
 coverage/
+test-results/
+playwright-report/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Tauri build artifacts
+src-tauri/target/
+src-tauri/gen/
+src-tauri/icons/
+
+# Rust
+**/*.rs.bk
+
+# Misc
+*.tgz
+*.zip
+.contextbridge/
