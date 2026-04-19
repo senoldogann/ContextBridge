@@ -1,6 +1,7 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MainContent } from "@/components/layout/MainContent";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { UpdateChecker } from "@/components/ui/UpdateChecker";
 import { useProjectStore } from "@/stores/projectStore";
 
 function ErrorBanner() {
@@ -28,6 +29,7 @@ export function App() {
     <div className="flex h-screen bg-zinc-950 text-zinc-100">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
+        <UpdateChecker />
         <ErrorBanner />
         <ErrorBoundary>
           <MainContent />

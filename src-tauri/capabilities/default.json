@@ -2,5 +2,11 @@
   "identifier": "default",
   "description": "Default capability for ContextBridge",
   "windows": ["*"],
-  "permissions": ["core:default", "shell:allow-open", "dialog:default"]
+  "permissions": [
+    "core:default",
+    "shell:allow-open",
+    "dialog:default",
+    "updater:default",
+    "process:allow-restart"
+  ]
 }

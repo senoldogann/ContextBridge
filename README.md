@@ -4,48 +4,57 @@
 
 **Your projects, understood by every AI tool.**
 
-[![CI](https://github.com/senoldogann/contextbridge/actions/workflows/ci.yml/badge.svg)](https://github.com/senoldogann/contextbridge/actions/workflows/ci.yml)
+[![CI](https://github.com/senoldogann/ContextBridge/actions/workflows/ci.yml/badge.svg)](https://github.com/senoldogann/ContextBridge/actions/workflows/ci.yml)
+[![Release](https://github.com/senoldogann/ContextBridge/actions/workflows/release.yml/badge.svg)](https://github.com/senoldogann/ContextBridge/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+<!-- ![ContextBridge Screenshot](docs/assets/screenshot.png) -->
 
 </div>
 
 ---
 
-## The Problem
+## What is ContextBridge?
 
-Every AI coding tool has its own context format — Claude needs `CLAUDE.md`, Copilot reads `.github/copilot-instructions.md`, Cursor wants `.cursorrules`, Codex uses `AGENTS.md`. Keeping these in sync is tedious and error-prone. When your project changes, your AI context goes stale.
+ContextBridge is a lightweight **menu-bar desktop app** that watches your project, builds a searchable context database, and **automatically generates** up-to-date configuration files for every AI coding tool you use — Claude (`CLAUDE.md`), GitHub Copilot (`.github/copilot-instructions.md`), Cursor (`.cursorrules`), and Codex (`AGENTS.md`).
 
-## The Solution
+No more manually maintaining four different context files. Change once, sync everywhere.
 
-ContextBridge is a lightweight menu-bar app that **watches your project**, builds a searchable context database, and **automatically generates** up-to-date configuration files for every AI tool you use.
+## Features
 
-<!-- Screenshot placeholder -->
-<!-- ![ContextBridge Screenshot](docs/assets/screenshot.png) -->
-
-## ✨ Features
-
-- 🔍 **Automatic Project Scanning** — watches your files and builds context in real-time
-- 🧠 **Smart Context Engine** — extracts language, structure, git metadata, and content hashes
-- 🔄 **Multi-Tool Output** — generates configs for Claude, Copilot, Cursor, and Codex simultaneously
+- 🔄 **4-Tool Auto-Sync** — generates and writes configs for Claude, Copilot, Cursor, and Codex simultaneously
+- 🔍 **Smart Context Engine** — extracts language, project structure, git metadata, and content hashes
 - 🗄️ **Full-Text Search** — SQLite FTS5 powers instant search across your entire project context
 - 🖥️ **Menu Bar App** — lives in your system tray, always ready, never in the way
-- 🔌 **MCP Server** — exposes context via Model Context Protocol for programmatic access
-- ⚡ **Native Performance** — Rust backend, ~10 MB binary, ~30 MB memory footprint
-- 🔒 **Local First** — all data stays on your machine in a single SQLite file
+- 🔌 **MCP Server** — exposes context via Model Context Protocol (JSON-RPC 2.0 over stdio)
+- ⚡ **Native Performance** — Rust backend, ~10 MB binary, ~30 MB memory
+- 🔒 **Local First** — all data stays on your machine
+- 🔄 **Auto-Updates** — built-in update checker with one-click install
 
-## Quick Start
+## Installation
+
+Download the latest release for your platform from the [Releases page](https://github.com/senoldogann/ContextBridge/releases):
+
+| Platform              | Download                      |
+| --------------------- | ----------------------------- |
+| macOS (Apple Silicon) | `.dmg` (aarch64)              |
+| macOS (Intel)         | `.dmg` (x86_64)               |
+| Linux                 | `.deb` / `.AppImage` (x86_64) |
+| Windows               | `.msi` / `.exe` (x86_64)      |
+
+## Development
 
 ### Prerequisites
 
-- [Rust](https://rustup.rs) (stable)
 - [Node.js](https://nodejs.org) 22+
-- [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS
+- [Rust](https://rustup.rs) (stable)
+- [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS
 
-### Development
+### Quick Start
 
 ```bash
-git clone https://github.com/senoldogann/contextbridge.git
-cd contextbridge
+git clone https://github.com/senoldogann/ContextBridge.git
+cd ContextBridge
 npm ci
 npm run tauri dev
 ```
@@ -56,51 +65,52 @@ npm run tauri dev
 npm run tauri build
 ```
 
+### Test
+
+```bash
+# Frontend tests (60 specs)
+npm test
+
+# Rust tests (28 specs)
+cargo test --workspace
+
+# E2E tests
+npm run test:e2e
+```
+
+### Generate App Icons
+
+```bash
+# Place a 1024×1024 PNG as app-icon.png, then:
+./scripts/generate-icons.sh
+```
+
 ## Architecture
 
-ContextBridge is a **Tauri v2** application with a Cargo workspace of 3 crates:
+ContextBridge is a **Tauri v2** app with a Cargo workspace of three crates:
 
 ```
 File Watcher → Context Engine → SQLite (WAL + FTS5) → Output Formatters → AI Config Files
 ```
 
-| Crate                | Purpose                             |
-| -------------------- | ----------------------------------- |
-| `contextbridge`      | Main Tauri app (commands, core, DB) |
-| `contextbridge-core` | Shared types and trait definitions  |
-| `contextbridge-mcp`  | Standalone MCP server binary        |
+| Crate                | Purpose                            |
+| -------------------- | ---------------------------------- |
+| `contextbridge`      | Main Tauri app (commands, DB, UI)  |
+| `contextbridge-core` | Shared types and trait definitions |
+| `contextbridge-mcp`  | Standalone MCP server binary       |
+
+| Layer     | Technology                       |
+| --------- | -------------------------------- |
+| Framework | Tauri v2                         |
+| Backend   | Rust (tokio, rusqlite, notify)   |
+| Frontend  | React 19 + TypeScript + Vite     |
+| Database  | SQLite (WAL + FTS5)              |
+| State     | Zustand                          |
+| Styling   | Tailwind CSS v4                  |
+| Testing   | Vitest + Playwright + cargo test |
+| CI/CD     | GitHub Actions (4-platform)      |
 
 📖 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full deep-dive.
-
-## Tech Stack
-
-| Layer     | Technology                         |
-| --------- | ---------------------------------- |
-| Framework | Tauri v2                           |
-| Backend   | Rust (tokio, rusqlite, notify)     |
-| Frontend  | React 19 + TypeScript + Vite       |
-| Database  | SQLite (WAL + FTS5)                |
-| State     | Zustand (UI only)                  |
-| Styling   | CSS + clsx                         |
-| Icons     | Lucide React                       |
-| Testing   | Vitest + Playwright + cargo test   |
-| CI/CD     | GitHub Actions (4-platform matrix) |
-
-## Roadmap
-
-- [x] Project scaffolding + Tauri v2 setup
-- [x] SQLite with WAL + FTS5
-- [x] File watcher + Context Engine
-- [x] Output formatters (Claude, Copilot, Cursor, Codex)
-- [x] MCP server (JSON-RPC 2.0 over stdio)
-- [x] Sync engine with content-hash dedup
-- [x] CI/CD pipeline (4-platform matrix)
-- [ ] Project management UI
-- [ ] Context rule editor
-- [ ] Settings panel (theme, adapters, watch paths)
-- [ ] Context summarization (local LLM)
-- [ ] Auto-update support
-- [ ] Plugin system for custom output formats
 
 ## Contributing
 
