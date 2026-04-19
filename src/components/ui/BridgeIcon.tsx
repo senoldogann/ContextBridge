@@ -4,49 +4,68 @@ interface BridgeIconProps {
 }
 
 export function BridgeIcon({ className = "h-5 w-5", gradient = false }: BridgeIconProps) {
-  const id = "cb-grad";
-
   return (
     <svg
-      viewBox="0 0 32 32"
+      viewBox="0 0 64 64"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       aria-hidden="true"
     >
-      <defs>
-        <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#10a37f" />
-          <stop offset="100%" stopColor="#4a7afe" />
-        </linearGradient>
-      </defs>
-
-      {/* Rounded square background */}
       <rect
-        x="2"
-        y="2"
-        width="28"
-        height="28"
-        rx="8"
-        fill={gradient ? `url(#${id})` : "currentColor"}
+        width="64"
+        height="64"
+        rx="14"
+        fill={gradient ? "#171717" : "currentColor"}
         opacity={gradient ? 1 : 0.12}
       />
-
-      {/* "CB" letterforms */}
       <path
-        d="M11.5 10.5C10 10.5 8.5 11.5 8.5 13.5V18.5C8.5 20.5 10 21.5 11.5 21.5H13"
-        stroke={gradient ? "white" : "currentColor"}
-        strokeWidth="2.2"
+        d="M12 40 C12 40 20 24 32 24 C44 24 52 40 52 40"
+        stroke={gradient ? "#10a37f" : "currentColor"}
+        strokeWidth="4"
         strokeLinecap="round"
-        fill="none"
       />
       <path
-        d="M17 10.5H19.5C21 10.5 22.5 11.2 22.5 13C22.5 14.2 21.5 15 20.5 15.2C21.8 15.4 23 16.2 23 17.8C23 19.8 21.5 21.5 19.5 21.5H17V10.5Z"
-        stroke={gradient ? "white" : "currentColor"}
-        strokeWidth="2"
+        d="M12 40 C12 40 20 32 32 32 C44 32 52 40 52 40"
+        stroke={gradient ? "#13c294" : "currentColor"}
+        strokeWidth="2.5"
         strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
+      />
+      <line
+        x1="20"
+        y1="40"
+        x2="20"
+        y2="28"
+        stroke={gradient ? "#10a37f" : "currentColor"}
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <line
+        x1="32"
+        y1="40"
+        x2="32"
+        y2="24"
+        stroke={gradient ? "#10a37f" : "currentColor"}
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <line
+        x1="44"
+        y1="40"
+        x2="44"
+        y2="28"
+        stroke={gradient ? "#10a37f" : "currentColor"}
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <line
+        x1="8"
+        y1="40"
+        x2="56"
+        y2="40"
+        stroke={gradient ? "#4a7afe" : "currentColor"}
+        strokeWidth="3"
+        strokeLinecap="round"
       />
     </svg>
   );

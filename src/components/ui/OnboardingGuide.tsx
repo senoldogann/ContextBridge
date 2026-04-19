@@ -28,7 +28,8 @@ const steps: Step[] = [
         <motion.div
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-          className="relative z-10 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 shadow-xl ring-1 shadow-emerald-500/30 ring-white/10"
+          className="relative z-10 flex h-14 w-14 items-center justify-center rounded-2xl shadow-xl ring-1 ring-white/10"
+          style={{ background: "var(--bg-elevated)", boxShadow: "var(--shadow-card)" }}
         >
           <BridgeIcon className="h-7 w-7 text-white" />
         </motion.div>
@@ -49,7 +50,14 @@ const steps: Step[] = [
               className="absolute flex flex-col items-center gap-1"
               style={{ transform: `translate(${x}px, ${y}px)` }}
             >
-              <div className="light:bg-zinc-200/90 light:text-emerald-600 light:ring-zinc-300/50 flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-800/90 text-[9px] font-bold text-emerald-300 ring-1 ring-zinc-700/50 dark:bg-zinc-800/90">
+              <div
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-[9px] font-bold ring-1"
+                style={{
+                  background: "var(--bg-elevated)",
+                  color: "var(--primary)",
+                  boxShadow: "inset 0 0 0 1px var(--border)",
+                }}
+              >
                 {tool.slice(0, 2)}
               </div>
             </motion.div>
@@ -67,7 +75,7 @@ const steps: Step[] = [
               <motion.path
                 key={i}
                 d={d}
-                stroke="#6366f1"
+                stroke="var(--border-strong)"
                 strokeWidth="1"
                 fill="none"
                 strokeDasharray="4 4"
@@ -108,7 +116,7 @@ const steps: Step[] = [
             className="rounded-lg border-2 border-dashed p-4 text-center"
             style={{ borderColor: "var(--border-strong)" }}
           >
-            <FolderOpen className="mx-auto mb-1 h-6 w-6 text-emerald-400" />
+            <FolderOpen className="mx-auto mb-1 h-6 w-6" style={{ color: "var(--primary)" }} />
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>
               Select project folder
             </p>
@@ -140,10 +148,10 @@ const steps: Step[] = [
           {
             tool: "GitHub Copilot",
             file: "copilot-instructions.md",
-            color: "text-emerald-400",
+            color: "text-green-400",
             delay: 0.2,
           },
-          { tool: "Codex", file: "AGENTS.md", color: "text-violet-400", delay: 0.3 },
+          { tool: "Codex", file: "AGENTS.md", color: "text-teal-400", delay: 0.3 },
         ].map(({ tool, file, color, delay }) => (
           <motion.div
             key={tool}
@@ -186,7 +194,9 @@ const steps: Step[] = [
           className="rounded-xl p-3 text-xs leading-relaxed"
           style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}
         >
-          <span className="font-semibold text-emerald-400">You → Claude:</span>
+          <span className="font-semibold" style={{ color: "var(--primary)" }}>
+            You → Claude:
+          </span>
           <span style={{ color: "var(--text-secondary)" }}>
             {" "}
             "Refactor the auth module to use JWT"
@@ -203,8 +213,8 @@ const steps: Step[] = [
           <span style={{ color: "var(--text-secondary)" }}>
             {" "}
             "Sure! I see you're using Express with TypeScript. I'll update{" "}
-            <code className="text-emerald-300">src/auth/middleware.ts</code> to use{" "}
-            <code className="text-emerald-300">jsonwebtoken</code>…"
+            <code style={{ color: "var(--primary)" }}>src/auth/middleware.ts</code> to use{" "}
+            <code style={{ color: "var(--primary)" }}>jsonwebtoken</code>…"
           </span>
         </motion.div>
         <motion.p
@@ -270,8 +280,8 @@ export function OnboardingGuide({ onClose }: OnboardingGuideProps) {
           border: "1px solid var(--border-strong)",
         }}
       >
-        {/* Header gradient strip */}
-        <div className="h-1 w-full bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600" />
+        {/* Header accent line */}
+        <div className="h-0.5 w-full" style={{ background: "var(--border-strong)" }} />
 
         {/* Close */}
         <button
@@ -294,8 +304,8 @@ export function OnboardingGuide({ onClose }: OnboardingGuideProps) {
             {steps.map((_, i) => (
               <div
                 key={i}
-                className={`h-1 rounded-full transition-all duration-300 ${i === stepIndex ? "w-6 bg-emerald-500" : "w-3"}`}
-                style={{ background: i === stepIndex ? "#6366f1" : "var(--border-strong)" }}
+                className={`h-1 rounded-full transition-all duration-300 ${i === stepIndex ? "w-6" : "w-3"}`}
+                style={{ background: i === stepIndex ? "var(--primary)" : "var(--border-strong)" }}
               />
             ))}
           </div>
@@ -329,7 +339,10 @@ export function OnboardingGuide({ onClose }: OnboardingGuideProps) {
               transition={{ duration: 0.28, ease: "easeInOut" }}
             >
               <div className="mb-1 flex items-center gap-2">
-                <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+                <span
+                  className="rounded-md px-2 py-0.5 text-[10px] font-medium"
+                  style={{ background: "var(--primary-muted)", color: "var(--primary)" }}
+                >
                   {step.subtitle}
                 </span>
               </div>
@@ -358,7 +371,8 @@ export function OnboardingGuide({ onClose }: OnboardingGuideProps) {
               onClick={goNext}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all hover:shadow-emerald-500/40"
+              className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:opacity-80"
+              style={{ background: "var(--text-primary)", color: "var(--bg-base)" }}
             >
               {isLast ? (
                 <>

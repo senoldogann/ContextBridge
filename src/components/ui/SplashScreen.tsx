@@ -53,21 +53,17 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 0.15, scale: 1 }}
+              animate={{ opacity: 0.08, scale: 1 }}
               transition={{ duration: 1.5, ease: "easeOut" }}
-              className="absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-emerald-600 blur-[100px]"
+              className="absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full blur-[100px]"
+              style={{ background: "var(--primary)" }}
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 0.08, scale: 1 }}
+              animate={{ opacity: 0.05, scale: 1 }}
               transition={{ duration: 2, ease: "easeOut", delay: 0.3 }}
-              className="absolute -bottom-32 left-1/4 h-64 w-64 rounded-full bg-violet-600 blur-[80px]"
-            />
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.06 }}
-              transition={{ duration: 2, delay: 0.5 }}
-              className="absolute right-1/4 -bottom-16 h-48 w-48 rounded-full bg-teal-400 blur-[60px]"
+              className="absolute -bottom-32 left-1/4 h-64 w-64 rounded-full blur-[80px]"
+              style={{ background: "var(--primary)" }}
             />
           </div>
 
@@ -80,7 +76,10 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
               className="animate-float"
             >
-              <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-500 to-cyan-600 shadow-2xl ring-1 shadow-emerald-500/40 ring-white/10">
+              <div
+                className="relative flex h-24 w-24 items-center justify-center rounded-3xl shadow-2xl ring-1 ring-white/10"
+                style={{ background: "var(--bg-elevated)", boxShadow: "var(--shadow-hover)" }}
+              >
                 <BridgeIcon className="h-12 w-12 text-white" />
                 {/* Inner glow */}
                 <div className="absolute inset-0 rounded-3xl bg-white/5" />
@@ -94,7 +93,10 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
               transition={{ duration: 0.6, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
               className="flex flex-col items-center gap-2"
             >
-              <h1 className="bg-gradient-to-r from-emerald-300 via-white to-cyan-300 bg-clip-text text-4xl font-bold tracking-tight text-transparent">
+              <h1
+                className="text-4xl font-bold tracking-tight"
+                style={{ color: "var(--text-primary)" }}
+              >
                 ContextBridge
               </h1>
               <motion.p
@@ -120,8 +122,8 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
                 style={{ background: "var(--border-strong)" }}
               >
                 <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500"
-                  style={{ width: `${progress}%` }}
+                  className="h-full rounded-full"
+                  style={{ width: `${progress}%`, background: "var(--primary)" }}
                   transition={{ ease: "easeOut" }}
                 />
               </div>
@@ -129,7 +131,8 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
                 {[0, 1, 2].map((i) => (
                   <motion.div
                     key={i}
-                    className="h-1 w-1 rounded-full bg-emerald-500"
+                    className="h-1 w-1 rounded-full"
+                    style={{ background: "var(--primary)" }}
                     animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
                     transition={{
                       duration: 1.2,
