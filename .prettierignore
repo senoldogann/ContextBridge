@@ -1,0 +1,6 @@
+dist
+src-tauri/target
+node_modules
+contextbridge-mcp/target
+contextbridge-core/target
+*.lock
