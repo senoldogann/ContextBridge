@@ -1,7 +1,6 @@
 {
-  "plugins": {
-    "shell": {
-      "open": true
-    }
-  }
+  "identifier": "default",
+  "description": "Default capability for ContextBridge",
+  "windows": ["*"],
+  "permissions": ["core:default", "shell:allow-open"]
 }

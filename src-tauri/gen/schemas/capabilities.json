@@ -1,0 +1,9 @@
+{
+  "default": {
+    "identifier": "default",
+    "description": "Default capability for ContextBridge",
+    "local": true,
+    "windows": ["*"],
+    "permissions": ["core:default", "shell:allow-open"]
+  }
+}
