@@ -1,0 +1,9 @@
+[workspace]
+members = ["src-tauri", "contextbridge-core", "contextbridge-mcp"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["Senol Dogan <contact@senoldogan.dev>"]

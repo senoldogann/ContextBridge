@@ -1,0 +1,12 @@
+[package]
+name = "contextbridge-mcp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "MCP server for ContextBridge"
+
+[dependencies]
+contextbridge-core = { path = "../contextbridge-core" }
+tokio = { version = "1", features = ["full"] }
+serde_json = "1"
