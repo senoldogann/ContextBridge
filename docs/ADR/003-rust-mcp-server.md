@@ -10,11 +10,11 @@ ContextBridge exposes project context over the [Model Context Protocol (MCP)](ht
 
 ### Options Considered
 
-| Option         | Pros                                        | Cons                                        |
-| -------------- | ------------------------------------------- | ------------------------------------------- |
-| **Rust**       | No runtime dependency, shares types with app, single binary | Fewer MCP libraries, more boilerplate       |
-| TypeScript     | Official SDK, large ecosystem               | Requires Node.js runtime, type duplication  |
-| Python         | Good SDK support                            | Requires Python runtime, type duplication   |
+| Option     | Pros                                                        | Cons                                       |
+| ---------- | ----------------------------------------------------------- | ------------------------------------------ |
+| **Rust**   | No runtime dependency, shares types with app, single binary | Fewer MCP libraries, more boilerplate      |
+| TypeScript | Official SDK, large ecosystem                               | Requires Node.js runtime, type duplication |
+| Python     | Good SDK support                                            | Requires Python runtime, type duplication  |
 
 ## Decision
 

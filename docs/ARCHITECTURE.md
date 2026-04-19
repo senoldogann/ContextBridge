@@ -37,15 +37,16 @@ The app ships as a single native binary per platform — no runtime dependencies
 
 The project is organized as a Cargo workspace with three crates:
 
-| Crate                | Path                 | Purpose                                  |
-| -------------------- | -------------------- | ---------------------------------------- |
-| `contextbridge`      | `src-tauri/`         | Main Tauri application (binary + lib)    |
-| `contextbridge-core` | `contextbridge-core/`| Shared types, models, and trait defs     |
-| `contextbridge-mcp`  | `contextbridge-mcp/` | Standalone MCP server binary             |
+| Crate                | Path                  | Purpose                               |
+| -------------------- | --------------------- | ------------------------------------- |
+| `contextbridge`      | `src-tauri/`          | Main Tauri application (binary + lib) |
+| `contextbridge-core` | `contextbridge-core/` | Shared types, models, and trait defs  |
+| `contextbridge-mcp`  | `contextbridge-mcp/`  | Standalone MCP server binary          |
 
 ### contextbridge-core
 
 The shared foundation crate. Contains:
+
 - Serializable types used across IPC boundaries
 - Domain models (Project, ContextEntry, Rule, etc.)
 - Trait definitions consumed by both the app and MCP server
@@ -126,14 +127,14 @@ A standalone binary that exposes the context database over the [Model Context Pr
 
 ## Module Responsibilities
 
-| Layer       | Modules          | Responsibility                                   |
-| ----------- | ---------------- | ------------------------------------------------ |
-| **Commands**| `commands/*`     | Thin IPC surface — validate, delegate, serialize |
-| **Core**    | `core/*`         | All business logic: scanning, watching, engine   |
-| **Output**  | `output/*`       | Format context for specific AI tools             |
-| **DB**      | `db/*`           | SQLite connection, queries, migrations           |
-| **State**   | `state.rs`       | Shared application state (`Arc<Mutex<...>>`)     |
-| **Errors**  | `errors.rs`      | Error types with `thiserror` + `Serialize`       |
+| Layer        | Modules      | Responsibility                                   |
+| ------------ | ------------ | ------------------------------------------------ |
+| **Commands** | `commands/*` | Thin IPC surface — validate, delegate, serialize |
+| **Core**     | `core/*`     | All business logic: scanning, watching, engine   |
+| **Output**   | `output/*`   | Format context for specific AI tools             |
+| **DB**       | `db/*`       | SQLite connection, queries, migrations           |
+| **State**    | `state.rs`   | Shared application state (`Arc<Mutex<...>>`)     |
+| **Errors**   | `errors.rs`  | Error types with `thiserror` + `Serialize`       |
 
 ## State Management
 
@@ -148,15 +149,15 @@ SQLite with WAL (Write-Ahead Logging) mode for concurrent reads during writes.
 
 ### Tables
 
-| Table               | Purpose                                        |
-| ------------------- | ---------------------------------------------- |
-| `projects`          | Registered project roots                       |
-| `context_entries`   | Individual file/directory context records      |
-| `rules`             | User-defined context rules                     |
-| `settings`          | Key-value application settings                 |
-| `tags`              | Taxonomy tags for context entries              |
-| `context_tags`      | Many-to-many join (entries ↔ tags)             |
-| `context_entries_fts`| FTS5 virtual table for full-text search       |
+| Table                 | Purpose                                   |
+| --------------------- | ----------------------------------------- |
+| `projects`            | Registered project roots                  |
+| `context_entries`     | Individual file/directory context records |
+| `rules`               | User-defined context rules                |
+| `settings`            | Key-value application settings            |
+| `tags`                | Taxonomy tags for context entries         |
+| `context_tags`        | Many-to-many join (entries ↔ tags)        |
+| `context_entries_fts` | FTS5 virtual table for full-text search   |
 
 ### Key Design Decisions
 
@@ -205,11 +206,11 @@ pub trait ContextFormatter {
 
 Each adapter produces a tool-specific file:
 
-| Adapter  | Output File                          |
-| -------- | ------------------------------------ |
-| Claude   | `CLAUDE.md`                          |
-| Copilot  | `.github/copilot-instructions.md`    |
-| Cursor   | `.cursorrules`                       |
-| Codex    | `AGENTS.md`                          |
+| Adapter | Output File                       |
+| ------- | --------------------------------- |
+| Claude  | `CLAUDE.md`                       |
+| Copilot | `.github/copilot-instructions.md` |
+| Cursor  | `.cursorrules`                    |
+| Codex   | `AGENTS.md`                       |
 
 The trait-based design makes adding new AI tool adapters trivial — implement two methods and register the formatter.

@@ -34,7 +34,11 @@ body {
 }
 
 /* Smooth transitions for interactive elements */
-button, a, input, select, textarea {
+button,
+a,
+input,
+select,
+textarea {
   transition: all 150ms ease-out;
 }
 

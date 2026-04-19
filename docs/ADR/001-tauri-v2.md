@@ -10,12 +10,12 @@ ContextBridge needs a cross-platform desktop application framework. The app is a
 
 ### Options Considered
 
-| Option      | Pros                                          | Cons                                         |
-| ----------- | --------------------------------------------- | -------------------------------------------- |
-| **Tauri v2**| Small binary, native webview, Rust backend, system tray support | Younger ecosystem, webview rendering differences |
-| Electron    | Mature ecosystem, consistent rendering        | ~150 MB binary, high memory usage, ships Chromium |
-| Native (Swift/C++) | Best performance, native UI              | No cross-platform, 3x codebase              |
-| Flutter     | Cross-platform, good perf                     | Large runtime, Dart ecosystem, limited tray support |
+| Option             | Pros                                                            | Cons                                                |
+| ------------------ | --------------------------------------------------------------- | --------------------------------------------------- |
+| **Tauri v2**       | Small binary, native webview, Rust backend, system tray support | Younger ecosystem, webview rendering differences    |
+| Electron           | Mature ecosystem, consistent rendering                          | ~150 MB binary, high memory usage, ships Chromium   |
+| Native (Swift/C++) | Best performance, native UI                                     | No cross-platform, 3x codebase                      |
+| Flutter            | Cross-platform, good perf                                       | Large runtime, Dart ecosystem, limited tray support |
 
 ## Decision
 

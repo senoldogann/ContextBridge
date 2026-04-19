@@ -10,12 +10,12 @@ ContextBridge needs a database to store project context, file metadata, rules, a
 
 ### Options Considered
 
-| Option         | Pros                                        | Cons                                        |
-| -------------- | ------------------------------------------- | ------------------------------------------- |
-| **SQLite**     | Zero config, embedded, single file, fast    | Single writer, no built-in replication      |
-| PostgreSQL     | Powerful, concurrent writers, extensions    | Requires server process, complex setup      |
-| RocksDB / sled | Embedded, high write throughput             | No SQL, no FTS, harder to query ad-hoc      |
-| JSON files     | Simple, human-readable                      | No indexing, no queries, corruption risk    |
+| Option         | Pros                                     | Cons                                     |
+| -------------- | ---------------------------------------- | ---------------------------------------- |
+| **SQLite**     | Zero config, embedded, single file, fast | Single writer, no built-in replication   |
+| PostgreSQL     | Powerful, concurrent writers, extensions | Requires server process, complex setup   |
+| RocksDB / sled | Embedded, high write throughput          | No SQL, no FTS, harder to query ad-hoc   |
+| JSON files     | Simple, human-readable                   | No indexing, no queries, corruption risk |
 
 ## Decision
 

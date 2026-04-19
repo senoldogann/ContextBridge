@@ -10,11 +10,11 @@ ContextBridge needs full-text search to let users find context entries by conten
 
 ### Options Considered
 
-| Option       | Pros                                         | Cons                                          |
-| ------------ | -------------------------------------------- | --------------------------------------------- |
-| **FTS5**     | Built into SQLite, zero extra deps, simple   | Less flexible ranking, no fuzzy search        |
-| Tantivy      | Powerful ranking, fuzzy search, tokenizers   | Separate index, ~2 MB binary bloat, complexity |
-| Meilisearch  | Great relevance, typo tolerance              | External process, HTTP dependency             |
+| Option      | Pros                                       | Cons                                           |
+| ----------- | ------------------------------------------ | ---------------------------------------------- |
+| **FTS5**    | Built into SQLite, zero extra deps, simple | Less flexible ranking, no fuzzy search         |
+| Tantivy     | Powerful ranking, fuzzy search, tokenizers | Separate index, ~2 MB binary bloat, complexity |
+| Meilisearch | Great relevance, typo tolerance            | External process, HTTP dependency              |
 
 ## Decision
 

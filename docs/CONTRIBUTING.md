@@ -4,12 +4,12 @@ Thank you for your interest in contributing! This guide will help you get starte
 
 ## Prerequisites
 
-| Tool       | Version | Install                                      |
-| ---------- | ------- | -------------------------------------------- |
-| Rust       | stable  | [rustup.rs](https://rustup.rs)               |
-| Node.js    | 22+     | [nodejs.org](https://nodejs.org)              |
-| Tauri CLI  | 2.x     | `cargo install tauri-cli` or via `npx tauri`  |
-| System deps| —       | See [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) |
+| Tool        | Version | Install                                                              |
+| ----------- | ------- | -------------------------------------------------------------------- |
+| Rust        | stable  | [rustup.rs](https://rustup.rs)                                       |
+| Node.js     | 22+     | [nodejs.org](https://nodejs.org)                                     |
+| Tauri CLI   | 2.x     | `cargo install tauri-cli` or via `npx tauri`                         |
+| System deps | —       | See [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) |
 
 ## Development Setup
 
@@ -76,15 +76,15 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 ### Types
 
-| Type       | When to use                          |
-| ---------- | ------------------------------------ |
-| `feat`     | New feature                          |
-| `fix`      | Bug fix                              |
-| `docs`     | Documentation only                   |
-| `style`    | Formatting, no code change           |
+| Type       | When to use                             |
+| ---------- | --------------------------------------- |
+| `feat`     | New feature                             |
+| `fix`      | Bug fix                                 |
+| `docs`     | Documentation only                      |
+| `style`    | Formatting, no code change              |
 | `refactor` | Code change that neither fixes nor adds |
-| `test`     | Adding or updating tests             |
-| `chore`    | Build, CI, tooling changes           |
+| `test`     | Adding or updating tests                |
+| `chore`    | Build, CI, tooling changes              |
 
 ### Examples
 
@@ -121,6 +121,7 @@ npm run test:e2e
 ## Pull Request Process
 
 1. **Fork** the repository and create a feature branch from `main`:
+
    ```bash
    git checkout -b feat/my-feature
    ```
@@ -130,6 +131,7 @@ npm run test:e2e
 3. **Write tests** for any new functionality.
 
 4. **Run all checks locally:**
+
    ```bash
    cargo fmt --all -- --check
    cargo clippy --workspace --all-targets -- -D warnings
