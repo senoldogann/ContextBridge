@@ -32,6 +32,11 @@ impl StorageManager {
         Ok(Self { conn })
     }
 
+    /// Returns a reference to the underlying SQLite connection.
+    pub fn conn(&self) -> &Connection {
+        &self.conn
+    }
+
     /// Create an in-memory database (useful for tests).
     pub fn in_memory() -> Result<Self, AppError> {
         let conn = Connection::open_in_memory().map_err(|e| AppError::Database(e.to_string()))?;
