@@ -62,7 +62,15 @@ pub fn list_projects(conn: &Connection) -> Result<Vec<Project>, AppError> {
 }
 
 /// Delete a project and all its related data (cascading).
+///
+/// FTS5 virtual tables don't participate in CASCADE deletes,
+/// so we clean up `context_fts` manually before removing the project.
 pub fn delete_project(conn: &Connection, id: &str) -> Result<(), AppError> {
+    // Clean up FTS entries before cascade delete
+    conn.execute(
+        "DELETE FROM context_fts WHERE project_id = ?1",
+        params![id],
+    )?;
     let affected = conn.execute("DELETE FROM projects WHERE id = ?1", params![id])?;
     if affected == 0 {
         return Err(AppError::NotFound(format!("project {id}")));
@@ -190,10 +198,10 @@ pub fn insert_context_note(conn: &Connection, note: &ContextNote) -> Result<(), 
         ],
     )?;
 
-    // Index in FTS
+    // Index in FTS with note_id for reliable JOIN
     conn.execute(
-        "INSERT INTO context_fts (project_id, content, category) VALUES (?1, ?2, ?3)",
-        params![note.project_id, note.content, note.category],
+        "INSERT INTO context_fts (note_id, project_id, content, category) VALUES (?1, ?2, ?3, ?4)",
+        params![note.id, note.project_id, note.content, note.category],
     )?;
 
     Ok(())
@@ -419,22 +427,40 @@ pub fn assemble_context(conn: &Connection, project_id: &str) -> Result<ProjectCo
 }
 
 /// Search context notes using FTS5 full-text search.
+///
+/// User input is sanitized to strip FTS5 special operators. The `project_id`
+/// is enforced via a standard SQL WHERE clause, not through the FTS MATCH
+/// expression, to prevent cross-project data access.
 pub fn search_context_notes(
     conn: &Connection,
     project_id: &str,
     query: &str,
 ) -> Result<Vec<ContextNote>, AppError> {
-    let fts_query = format!("project_id:{project_id} AND content:{query}");
+    // Sanitize: strip FTS5 operators and special characters
+    let sanitized: String = query
+        .chars()
+        .filter(|c| c.is_alphanumeric() || c.is_whitespace() || *c == '-' || *c == '_')
+        .collect();
+
+    let sanitized = sanitized.trim();
+    if sanitized.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    // Double-quote to treat as literal phrase in FTS5
+    let fts_query = format!("\"{}\"", sanitized.replace('"', "\"\""));
+
     let mut stmt = conn.prepare(
         "SELECT cn.id, cn.project_id, cn.category, cn.title, cn.content, cn.source,
                 cn.priority, cn.created_at, cn.updated_at
          FROM context_notes cn
-         JOIN context_fts fts ON cn.content = fts.content AND cn.project_id = fts.project_id
+         JOIN context_fts fts ON cn.id = fts.note_id
          WHERE context_fts MATCH ?1
+           AND cn.project_id = ?2
          ORDER BY rank",
     )?;
 
-    let rows = stmt.query_map(params![fts_query], map_context_note)?;
+    let rows = stmt.query_map(params![fts_query, project_id], map_context_note)?;
 
     let mut notes = Vec::new();
     for row in rows {

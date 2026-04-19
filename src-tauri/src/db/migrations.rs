@@ -1,12 +1,21 @@
-//! Database schema migrations.
+//! Database schema migrations with version tracking.
 
 use crate::errors::AppError;
 use rusqlite::Connection;
 
-/// Run all schema migrations against the given connection.
+/// Run all pending schema migrations against the given connection.
 pub fn run_migrations(conn: &Connection) -> Result<(), AppError> {
-    conn.execute_batch(MIGRATION_V1)
-        .map_err(|e| AppError::Database(format!("migration failed: {e}")))?;
+    let version: i64 = conn
+        .pragma_query_value(None, "user_version", |row| row.get(0))
+        .unwrap_or(0);
+
+    if version < 1 {
+        conn.execute_batch(MIGRATION_V1)
+            .map_err(|e| AppError::Database(format!("migration v1 failed: {e}")))?;
+        conn.pragma_update(None, "user_version", 1)
+            .map_err(|e| AppError::Database(format!("failed to set schema version: {e}")))?;
+    }
+
     Ok(())
 }
 
@@ -87,9 +96,10 @@ CREATE TABLE IF NOT EXISTS settings (
     value TEXT NOT NULL
 );
 
--- FTS5 for context notes
+-- FTS5 for context notes (content-sync with context_notes)
 CREATE VIRTUAL TABLE IF NOT EXISTS context_fts USING fts5(
-    project_id,
+    note_id UNINDEXED,
+    project_id UNINDEXED,
     content,
     category
 );

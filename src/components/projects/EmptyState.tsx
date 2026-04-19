@@ -1,12 +1,9 @@
 import { FolderOpen } from "lucide-react";
-import { useProjectStore } from "@/stores/projectStore";
 
 export function EmptyState() {
-  const addProject = useProjectStore((s) => s.addProject);
-
   const handleAdd = () => {
-    // Placeholder — will integrate @tauri-apps/plugin-dialog for native folder picker
-    void addProject("New Project", "/path/to/project");
+    // TODO(#1): integrate @tauri-apps/plugin-dialog for native folder picker
+    console.warn("Native folder picker not yet implemented");
   };
 
   return (

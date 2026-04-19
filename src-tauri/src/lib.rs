@@ -6,9 +6,11 @@
 //! IPC commands, file watching, and context output formatting.
 
 mod commands;
+#[allow(unused)] // Phase 2: wired into commands
 mod core;
 pub mod db;
 pub mod errors;
+#[allow(unused)] // Phase 3: wired into commands
 mod output;
 pub mod state;
 
@@ -35,9 +37,16 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
-            // Ensure data directory exists
-            let data_dir = dirs_data_dir();
+            let data_dir = dirs_data_dir()?;
             fs::create_dir_all(&data_dir)?;
+
+            // Restrict data directory to owner-only access
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let perms = std::fs::Permissions::from_mode(0o700);
+                std::fs::set_permissions(&data_dir, perms)?;
+            }
 
             let db_path = data_dir.join("data.db");
             let storage = db::StorageManager::new(&db_path)
@@ -67,7 +76,6 @@ pub fn run() {
             commands::projects::add_project,
             commands::projects::remove_project,
             commands::projects::get_project_context,
-            commands::context::get_context,
             commands::context::search_context,
             commands::settings::get_setting,
             commands::settings::set_setting,
@@ -77,8 +85,8 @@ pub fn run() {
 }
 
 /// Return the ContextBridge data directory (`~/.contextbridge`).
-fn dirs_data_dir() -> std::path::PathBuf {
-    dirs::home_dir()
-        .expect("cannot determine home directory")
-        .join(".contextbridge")
+fn dirs_data_dir() -> Result<std::path::PathBuf, Box<dyn std::error::Error>> {
+    Ok(dirs::home_dir()
+        .ok_or("cannot determine home directory")?
+        .join(".contextbridge"))
 }

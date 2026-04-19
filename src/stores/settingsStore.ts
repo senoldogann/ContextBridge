@@ -2,6 +2,20 @@ import { create } from "zustand";
 import type { AppSettings } from "@/types";
 import * as tauri from "@/lib/tauri";
 
+function parseStringArray(json: string, fallback: string[]): string[] {
+  try {
+    const parsed: unknown = JSON.parse(json);
+    if (Array.isArray(parsed) && parsed.every((v) => typeof v === "string")) {
+      return parsed as string[];
+    }
+  } catch {
+    // invalid JSON, use fallback
+  }
+  return fallback;
+}
+
+const DEFAULT_ADAPTERS = ["claude", "cursor", "copilot", "codex"];
+
 interface SettingsState extends AppSettings {
   loadSettings: () => Promise<void>;
   updateSetting: (key: string, value: string) => Promise<void>;
@@ -10,7 +24,7 @@ interface SettingsState extends AppSettings {
 export const useSettingsStore = create<SettingsState>((set) => ({
   theme: "dark",
   autoSync: true,
-  enabledAdapters: ["claude", "cursor", "copilot", "codex"],
+  enabledAdapters: DEFAULT_ADAPTERS,
 
   loadSettings: async () => {
     try {
@@ -21,7 +35,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       set({
         theme: theme === "light" ? "light" : "dark",
         autoSync: autoSync !== "false",
-        enabledAdapters: adapters ? JSON.parse(adapters) as string[] : ["claude", "cursor", "copilot", "codex"],
+        enabledAdapters: adapters ? parseStringArray(adapters, DEFAULT_ADAPTERS) : DEFAULT_ADAPTERS,
       });
     } catch (err) {
       console.error("Failed to load settings:", err);
@@ -37,7 +51,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       } else if (key === "auto_sync") {
         set({ autoSync: value !== "false" });
       } else if (key === "enabled_adapters") {
-        set({ enabledAdapters: JSON.parse(value) as string[] });
+        set({ enabledAdapters: parseStringArray(value, DEFAULT_ADAPTERS) });
       }
     } catch (err) {
       console.error("Failed to update setting:", err);

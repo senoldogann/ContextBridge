@@ -30,7 +30,8 @@ impl Serialize for AppError {
 
 impl From<rusqlite::Error> for AppError {
     fn from(e: rusqlite::Error) -> Self {
-        AppError::Database(e.to_string())
+        tracing::error!("Database error: {e}");
+        AppError::Database("A database error occurred".into())
     }
 }
 

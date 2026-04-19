@@ -6,6 +6,7 @@ interface ProjectState {
   projects: Project[];
   selectedProject: Project | null;
   isLoading: boolean;
+  error: string | null;
   loadProjects: () => Promise<void>;
   selectProject: (id: string) => void;
   addProject: (name: string, path: string) => Promise<void>;
@@ -16,15 +17,16 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   projects: [],
   selectedProject: null,
   isLoading: false,
+  error: null,
 
   loadProjects: async () => {
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     try {
       const projects = await tauri.listProjects();
       set({ projects, isLoading: false });
     } catch (err) {
       console.error("Failed to load projects:", err);
-      set({ isLoading: false });
+      set({ isLoading: false, error: String(err) });
     }
   },
 
@@ -34,6 +36,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   addProject: async (name: string, path: string) => {
+    set({ error: null });
     try {
       const project = await tauri.addProject(name, path);
       set((state) => ({
@@ -42,10 +45,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       }));
     } catch (err) {
       console.error("Failed to add project:", err);
+      set({ error: String(err) });
     }
   },
 
   removeProject: async (id: string) => {
+    set({ error: null });
     try {
       await tauri.removeProject(id);
       set((state) => ({
@@ -54,6 +59,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       }));
     } catch (err) {
       console.error("Failed to remove project:", err);
+      set({ error: String(err) });
     }
   },
 }));

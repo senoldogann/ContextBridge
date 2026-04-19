@@ -9,15 +9,14 @@ export function Sidebar() {
   const selectedProject = useProjectStore((s) => s.selectedProject);
   const loadProjects = useProjectStore((s) => s.loadProjects);
   const selectProject = useProjectStore((s) => s.selectProject);
-  const addProject = useProjectStore((s) => s.addProject);
 
   useEffect(() => {
     void loadProjects();
   }, [loadProjects]);
 
   const handleAddProject = () => {
-    // Placeholder — will integrate @tauri-apps/plugin-dialog for native folder picker
-    void addProject("New Project", "/path/to/project");
+    // TODO(#1): integrate @tauri-apps/plugin-dialog for native folder picker
+    console.warn("Native folder picker not yet implemented");
   };
 
   return (
