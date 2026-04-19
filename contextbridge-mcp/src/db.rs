@@ -17,9 +17,9 @@ pub fn open_db() -> Result<Connection> {
 
     let conn = Connection::open_with_flags(
         &path,
-        OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+        OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_FULL_MUTEX,
     )
-    .with_context(|| format!("failed to open database at {path}"))?;
+    .with_context(|| "failed to open ContextBridge database")?;
 
     Ok(conn)
 }
@@ -140,7 +140,14 @@ pub fn search_notes(
         .filter(|c| c.is_alphanumeric() || c.is_whitespace() || *c == '-' || *c == '_')
         .collect();
 
-    let sanitized = sanitized.trim();
+    // Strip leading/trailing hyphens from each word to prevent FTS5 NOT operator abuse
+    let sanitized: String = sanitized
+        .split_whitespace()
+        .map(|w| w.trim_matches('-'))
+        .filter(|w| !w.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ");
+
     if sanitized.is_empty() {
         return Ok(Vec::new());
     }
@@ -196,25 +203,16 @@ fn map_note(row: &rusqlite::Row) -> rusqlite::Result<ContextNote> {
     })
 }
 
-/// Platform-specific default database path.
+/// Default database path — must match the main app (`~/.contextbridge/data.db`).
 fn default_db_path() -> String {
-    #[cfg(target_os = "macos")]
+    let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
+    #[cfg(not(target_os = "windows"))]
     {
-        let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
-        format!("{home}/Library/Application Support/com.contextbridge.app/contextbridge.db")
-    }
-    #[cfg(target_os = "linux")]
-    {
-        let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
-        format!("{home}/.local/share/com.contextbridge.app/contextbridge.db")
+        format!("{home}/.contextbridge/data.db")
     }
     #[cfg(target_os = "windows")]
     {
-        let appdata = std::env::var("APPDATA").unwrap_or_else(|_| ".".into());
-        format!("{appdata}/com.contextbridge.app/contextbridge.db")
-    }
-    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
-    {
-        "contextbridge.db".into()
+        let appdata = std::env::var("APPDATA").unwrap_or_else(|_| home);
+        format!("{appdata}/.contextbridge/data.db")
     }
 }

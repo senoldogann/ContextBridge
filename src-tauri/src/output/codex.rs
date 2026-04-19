@@ -60,6 +60,7 @@ impl ContextFormatter for CodexFormatter {
         // Recent Activity
         write_recent_activity(&mut out, ctx)?;
 
+        crate::output::check_output_limit(&mut out);
         Ok(out)
     }
 
@@ -112,7 +113,7 @@ fn write_tech_stack(out: &mut String, ctx: &ProjectContext) -> Result<(), AppErr
 /// Write the boundaries section from notes or defaults.
 fn write_boundaries(
     out: &mut String,
-    groups: &std::collections::HashMap<&str, Vec<&contextbridge_core::ContextNote>>,
+    groups: &std::collections::BTreeMap<&str, Vec<&contextbridge_core::ContextNote>>,
 ) -> Result<(), AppError> {
     writeln!(out, "## Boundaries\n").map_err(fmt_err)?;
 

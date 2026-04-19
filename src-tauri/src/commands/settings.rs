@@ -28,6 +28,9 @@ pub fn set_setting(
     if !ALLOWED_KEYS.contains(&key.as_str()) {
         return Err(AppError::InvalidInput(format!("Unknown setting key: {key}")));
     }
+    if value.len() > 10_000 {
+        return Err(AppError::InvalidInput("Setting value too long (max 10,000 bytes)".into()));
+    }
     let storage = state.storage.lock().map_err(|_| AppError::Internal("State unavailable".into()))?;
     queries::set_setting(&storage.conn, &key, &value)
 }

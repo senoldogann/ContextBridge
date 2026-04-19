@@ -442,7 +442,14 @@ pub fn search_context_notes(
         .filter(|c| c.is_alphanumeric() || c.is_whitespace() || *c == '-' || *c == '_')
         .collect();
 
-    let sanitized = sanitized.trim();
+    // Strip leading/trailing hyphens from each word to prevent FTS5 NOT operator abuse
+    let sanitized: String = sanitized
+        .split_whitespace()
+        .map(|w| w.trim_matches('-'))
+        .filter(|w| !w.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ");
+
     if sanitized.is_empty() {
         return Ok(Vec::new());
     }

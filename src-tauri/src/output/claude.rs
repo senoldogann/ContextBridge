@@ -23,7 +23,7 @@ impl ContextFormatter for ClaudeFormatter {
     fn format(&self, ctx: &ProjectContext) -> Result<String, AppError> {
         let mut out = String::new();
 
-        writeln!(out, "# {}\n", ctx.project.name).map_err(|e| AppError::Other(e.to_string()))?;
+        writeln!(out, "# {}\n", crate::output::sanitize_for_heading(&ctx.project.name)).map_err(|e| AppError::Other(e.to_string()))?;
 
         // Overview
         write_overview(&mut out, ctx)?;
@@ -51,6 +51,7 @@ impl ContextFormatter for ClaudeFormatter {
         // Recent Changes
         write_recent_changes(&mut out, ctx)?;
 
+        crate::output::check_output_limit(&mut out);
         Ok(out)
     }
 
@@ -102,7 +103,7 @@ fn write_tech_stack(out: &mut String, ctx: &ProjectContext) -> Result<(), AppErr
 fn write_build_run(
     out: &mut String,
     ctx: &ProjectContext,
-    groups: &std::collections::HashMap<&str, Vec<&contextbridge_core::ContextNote>>,
+    groups: &std::collections::BTreeMap<&str, Vec<&contextbridge_core::ContextNote>>,
 ) -> Result<(), AppError> {
     let build_notes: Vec<&&contextbridge_core::ContextNote> = ["build", "setup"]
         .iter()
@@ -141,7 +142,7 @@ fn write_build_run(
 /// Write a section from notes matching the given categories.
 fn write_notes_section(
     out: &mut String,
-    groups: &std::collections::HashMap<&str, Vec<&contextbridge_core::ContextNote>>,
+    groups: &std::collections::BTreeMap<&str, Vec<&contextbridge_core::ContextNote>>,
     categories: &[&str],
     heading: &str,
 ) -> Result<(), AppError> {
@@ -166,7 +167,7 @@ fn write_notes_section(
 /// Write remaining notes that don't belong to dedicated sections.
 fn write_remaining_notes(
     out: &mut String,
-    groups: &std::collections::HashMap<&str, Vec<&contextbridge_core::ContextNote>>,
+    groups: &std::collections::BTreeMap<&str, Vec<&contextbridge_core::ContextNote>>,
 ) -> Result<(), AppError> {
     let remaining: Vec<(&&str, &Vec<&contextbridge_core::ContextNote>)> = groups
         .iter()

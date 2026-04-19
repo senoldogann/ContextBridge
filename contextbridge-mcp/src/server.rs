@@ -139,7 +139,7 @@ fn call_tool(name: &str, args: &Value) -> Value {
         Err(e) => {
             error!("tool {name} failed: {e:#}");
             json!({
-                "content": [{ "type": "text", "text": format!("Error: {e:#}") }],
+                "content": [{ "type": "text", "text": "An internal error occurred. Check server logs for details." }],
                 "isError": true
             })
         }
@@ -220,12 +220,23 @@ pub async fn run() -> anyhow::Result<()> {
     let mut reader = BufReader::new(stdin);
     let mut line = String::new();
 
+    const MAX_REQUEST_BYTES: usize = 1_048_576; // 1 MB
+
     loop {
         line.clear();
         let n = reader.read_line(&mut line).await?;
         if n == 0 {
             debug!("stdin closed, shutting down");
             break;
+        }
+
+        if line.len() > MAX_REQUEST_BYTES {
+            let resp = Response::err(Value::Null, -32600, "request too large");
+            let out = serde_json::to_string(&resp)?;
+            stdout.write_all(out.as_bytes()).await?;
+            stdout.write_all(b"\n").await?;
+            stdout.flush().await?;
+            continue;
         }
 
         let trimmed = line.trim();

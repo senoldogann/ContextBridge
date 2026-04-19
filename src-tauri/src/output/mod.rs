@@ -7,11 +7,43 @@ pub mod cursor;
 pub mod format;
 
 use contextbridge_core::{ContextNote, TechEntry};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
+
+/// Maximum output file size (512 KB). Formatters should truncate beyond this.
+pub const MAX_OUTPUT_BYTES: usize = 512_000;
+
+/// Check if output has exceeded the size limit and append a truncation notice.
+pub fn check_output_limit(out: &mut String) -> bool {
+    if out.len() > MAX_OUTPUT_BYTES {
+        out.truncate(MAX_OUTPUT_BYTES);
+        out.push_str("\n\n<!-- Output truncated by ContextBridge (exceeded 512KB limit) -->\n");
+        true
+    } else {
+        false
+    }
+}
+
+/// Sanitize a string for use in YAML front-matter values.
+pub fn sanitize_for_yaml(s: &str) -> String {
+    s.chars()
+        .filter(|c| !c.is_control() || *c == ' ')
+        .collect::<String>()
+        .replace("---", "—")
+        .replace('"', "'")
+        .replace('\n', " ")
+}
+
+/// Sanitize a string for use in a markdown heading.
+pub fn sanitize_for_heading(s: &str) -> String {
+    s.chars()
+        .filter(|c| !c.is_control())
+        .collect::<String>()
+        .replace('\n', " ")
+}
 
 /// Group notes by category for section-based formatting.
-pub fn group_notes_by_category(notes: &[ContextNote]) -> HashMap<&str, Vec<&ContextNote>> {
-    let mut groups: HashMap<&str, Vec<&ContextNote>> = HashMap::new();
+pub fn group_notes_by_category(notes: &[ContextNote]) -> BTreeMap<&str, Vec<&ContextNote>> {
+    let mut groups: BTreeMap<&str, Vec<&ContextNote>> = BTreeMap::new();
     for note in notes {
         groups.entry(note.category.as_str()).or_default().push(note);
     }
@@ -72,7 +104,13 @@ pub fn generate_build_commands(tech: &[TechEntry]) -> Vec<(String, String)> {
 
         match key.as_str() {
             "rust" | "cargo" => {
+                if seen.contains("rust") || seen.contains("cargo") {
+                    seen.insert(key);
+                    continue;
+                }
                 seen.insert(key);
+                seen.insert("rust".into());
+                seen.insert("cargo".into());
                 commands.push(("Build".into(), "cargo build".into()));
                 commands.push(("Test".into(), "cargo test".into()));
                 commands.push(("Lint".into(), "cargo clippy -- -D warnings".into()));
@@ -90,12 +128,24 @@ pub fn generate_build_commands(tech: &[TechEntry]) -> Vec<(String, String)> {
                 commands.push(("Test".into(), "npm test".into()));
             }
             "python" | "pip" => {
+                if seen.contains("python") || seen.contains("pip") {
+                    seen.insert(key);
+                    continue;
+                }
                 seen.insert(key);
+                seen.insert("python".into());
+                seen.insert("pip".into());
                 commands.push(("Install".into(), "pip install -r requirements.txt".into()));
                 commands.push(("Test".into(), "pytest".into()));
             }
             "go" | "golang" => {
+                if seen.contains("go") || seen.contains("golang") {
+                    seen.insert(key);
+                    continue;
+                }
                 seen.insert(key);
+                seen.insert("go".into());
+                seen.insert("golang".into());
                 commands.push(("Build".into(), "go build ./...".into()));
                 commands.push(("Test".into(), "go test ./...".into()));
             }
