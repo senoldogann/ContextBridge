@@ -36,7 +36,7 @@ fn test_analyze_git_repo() {
     init_test_repo(dir.path());
 
     let result =
-        contextbridge_lib::core::git_analyzer::analyze_git_repo(dir.path(), "test-proj", 50)
+        contextbridge_lib::engine::git_analyzer::analyze_git_repo(dir.path(), "test-proj", 50)
             .unwrap();
 
     // Should detect a branch
@@ -65,7 +65,7 @@ fn test_analyze_dirty_repo() {
     fs::write(dir.path().join("untracked.txt"), "dirty").unwrap();
 
     let result =
-        contextbridge_lib::core::git_analyzer::analyze_git_repo(dir.path(), "test-proj", 50)
+        contextbridge_lib::engine::git_analyzer::analyze_git_repo(dir.path(), "test-proj", 50)
             .unwrap();
     assert!(
         result.is_dirty,
@@ -86,10 +86,10 @@ fn test_analyze_and_persist() {
         created_at: "2025-01-01T00:00:00Z".to_string(),
         updated_at: "2025-01-01T00:00:00Z".to_string(),
     };
-    contextbridge_lib::db::queries::insert_project(&sm.conn, &project).unwrap();
+    contextbridge_lib::db::queries::insert_project(sm.conn(), &project).unwrap();
 
-    let result = contextbridge_lib::core::git_analyzer::analyze_and_persist(
-        &sm.conn,
+    let result = contextbridge_lib::engine::git_analyzer::analyze_and_persist(
+        sm.conn(),
         "git-test",
         dir.path(),
     )
@@ -98,7 +98,7 @@ fn test_analyze_and_persist() {
 
     // Verify persisted
     let changes =
-        contextbridge_lib::db::queries::list_recent_changes(&sm.conn, "git-test", 50).unwrap();
+        contextbridge_lib::db::queries::list_recent_changes(sm.conn(), "git-test", 50).unwrap();
     assert_eq!(changes.len(), 2, "Expected 2 persisted recent changes");
 }
 
@@ -107,6 +107,6 @@ fn test_not_a_git_repo() {
     let dir = TempDir::new().unwrap();
     fs::write(dir.path().join("file.txt"), "not a repo").unwrap();
 
-    let result = contextbridge_lib::core::git_analyzer::analyze_git_repo(dir.path(), "test", 50);
+    let result = contextbridge_lib::engine::git_analyzer::analyze_git_repo(dir.path(), "test", 50);
     assert!(result.is_err(), "Should fail for a non-git directory");
 }

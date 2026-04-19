@@ -11,7 +11,7 @@ use std::path::Path;
 /// Manages the SQLite database connection and schema.
 pub struct StorageManager {
     /// The underlying SQLite connection.
-    pub conn: Connection,
+    pub(crate) conn: Connection,
 }
 
 impl StorageManager {

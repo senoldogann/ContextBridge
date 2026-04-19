@@ -48,11 +48,11 @@ fn test_full_context_refresh() {
         created_at: "2025-01-01T00:00:00Z".to_string(),
         updated_at: "2025-01-01T00:00:00Z".to_string(),
     };
-    contextbridge_lib::db::queries::insert_project(&sm.conn, &project).unwrap();
+    contextbridge_lib::db::queries::insert_project(sm.conn(), &project).unwrap();
 
-    let options = contextbridge_lib::core::context_engine::RefreshOptions::default();
+    let options = contextbridge_lib::engine::context_engine::RefreshOptions::default();
     let result =
-        contextbridge_lib::core::context_engine::refresh_context(&sm, "full-test", &options)
+        contextbridge_lib::engine::context_engine::refresh_context(&sm, "full-test", &options)
             .unwrap();
 
     assert!(result.tech_count > 0, "Should have detected tech");
@@ -78,14 +78,15 @@ fn test_context_refresh_generates_notes() {
         created_at: "2025-01-01T00:00:00Z".to_string(),
         updated_at: "2025-01-01T00:00:00Z".to_string(),
     };
-    contextbridge_lib::db::queries::insert_project(&sm.conn, &project).unwrap();
+    contextbridge_lib::db::queries::insert_project(sm.conn(), &project).unwrap();
 
-    let options = contextbridge_lib::core::context_engine::RefreshOptions::default();
-    contextbridge_lib::core::context_engine::refresh_context(&sm, "notes-test", &options).unwrap();
+    let options = contextbridge_lib::engine::context_engine::RefreshOptions::default();
+    contextbridge_lib::engine::context_engine::refresh_context(&sm, "notes-test", &options)
+        .unwrap();
 
     // Should have auto-generated context notes
     let notes =
-        contextbridge_lib::db::queries::list_context_notes(&sm.conn, "notes-test", None).unwrap();
+        contextbridge_lib::db::queries::list_context_notes(sm.conn(), "notes-test", None).unwrap();
     assert!(
         !notes.is_empty(),
         "Should have generated at least one context note"
@@ -108,11 +109,11 @@ fn test_context_refresh_missing_path() {
         created_at: "2025-01-01T00:00:00Z".to_string(),
         updated_at: "2025-01-01T00:00:00Z".to_string(),
     };
-    contextbridge_lib::db::queries::insert_project(&sm.conn, &project).unwrap();
+    contextbridge_lib::db::queries::insert_project(sm.conn(), &project).unwrap();
 
-    let options = contextbridge_lib::core::context_engine::RefreshOptions::default();
+    let options = contextbridge_lib::engine::context_engine::RefreshOptions::default();
     let result =
-        contextbridge_lib::core::context_engine::refresh_context(&sm, "missing-path", &options);
+        contextbridge_lib::engine::context_engine::refresh_context(&sm, "missing-path", &options);
     assert!(
         result.is_err(),
         "Should fail when project path doesn't exist"

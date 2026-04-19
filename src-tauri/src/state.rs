@@ -1,7 +1,7 @@
 //! Application state shared across Tauri commands.
 
-use crate::core::watcher::WatcherSupervisor;
 use crate::db::StorageManager;
+use crate::engine::watcher::WatcherSupervisor;
 use std::sync::{Arc, Mutex};
 
 /// Shared application state managed by Tauri.

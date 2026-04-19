@@ -1,7 +1,7 @@
 //! Project CRUD commands exposed over Tauri IPC.
 
-use crate::core::context_engine::{self, RefreshOptions};
 use crate::db::{models::Project, queries};
+use crate::engine::context_engine::{self, RefreshOptions};
 use crate::errors::AppError;
 use crate::state::AppState;
 use contextbridge_core::ProjectContext;
@@ -140,12 +140,12 @@ pub fn sync_to_tool(
     state: State<'_, AppState>,
     project_id: String,
     target: String,
-) -> Result<crate::core::sync::SyncResult, AppError> {
+) -> Result<crate::engine::sync::SyncResult, AppError> {
     let storage = state
         .storage
         .lock()
         .map_err(|_| AppError::Internal("State unavailable".into()))?;
-    crate::core::sync::sync_to_tool(&storage, &project_id, &target)
+    crate::engine::sync::sync_to_tool(&storage, &project_id, &target)
 }
 
 /// Sync project context to all enabled AI tool targets.
@@ -153,10 +153,10 @@ pub fn sync_to_tool(
 pub fn sync_all_tools(
     state: State<'_, AppState>,
     project_id: String,
-) -> Result<Vec<crate::core::sync::SyncResult>, AppError> {
+) -> Result<Vec<crate::engine::sync::SyncResult>, AppError> {
     let storage = state
         .storage
         .lock()
         .map_err(|_| AppError::Internal("State unavailable".into()))?;
-    crate::core::sync::sync_all(&storage, &project_id)
+    crate::engine::sync::sync_all(&storage, &project_id)
 }

@@ -10,10 +10,10 @@ use chrono::Utc;
 use contextbridge_core::{ContextNote, ProjectContext, TechEntry};
 use rusqlite::params;
 
-use crate::core::git_analyzer;
-use crate::core::project_scanner::{self, ScannedFile};
 use crate::db::queries;
 use crate::db::StorageManager;
+use crate::engine::git_analyzer;
+use crate::engine::project_scanner::{self, ScannedFile};
 use crate::errors::AppError;
 
 // ---------------------------------------------------------------------------

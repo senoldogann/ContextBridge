@@ -6,13 +6,13 @@
 //! IPC commands, file watching, and context output formatting.
 
 mod commands;
-pub mod core;
 pub mod db;
+pub mod engine;
 pub mod errors;
 pub mod output;
 pub mod state;
 
-use core::watcher::WatcherSupervisor;
+use engine::watcher::WatcherSupervisor;
 use state::AppState;
 use std::fs;
 use tauri::{

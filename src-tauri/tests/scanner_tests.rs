@@ -23,7 +23,7 @@ tokio = "1"
     fs::write(dir.path().join("src/lib.rs"), "// lib").unwrap();
     fs::write(dir.path().join("README.md"), "# Test").unwrap();
 
-    let result = contextbridge_lib::core::project_scanner::scan_project(dir.path()).unwrap();
+    let result = contextbridge_lib::engine::project_scanner::scan_project(dir.path()).unwrap();
 
     // Should detect Rust
     assert!(
@@ -71,7 +71,7 @@ fn test_scan_node_project() {
     )
     .unwrap();
 
-    let result = contextbridge_lib::core::project_scanner::scan_project(dir.path()).unwrap();
+    let result = contextbridge_lib::engine::project_scanner::scan_project(dir.path()).unwrap();
 
     let names: Vec<&str> = result.tech_stack.iter().map(|t| t.name.as_str()).collect();
     assert!(
@@ -90,7 +90,7 @@ fn test_scan_ignores_node_modules() {
     fs::create_dir_all(dir.path().join("src")).unwrap();
     fs::write(dir.path().join("src/app.js"), "// app").unwrap();
 
-    let result = contextbridge_lib::core::project_scanner::scan_project(dir.path()).unwrap();
+    let result = contextbridge_lib::engine::project_scanner::scan_project(dir.path()).unwrap();
 
     assert!(
         !result
@@ -124,10 +124,10 @@ edition = "2021"
         created_at: "2025-01-01T00:00:00Z".to_string(),
         updated_at: "2025-01-01T00:00:00Z".to_string(),
     };
-    contextbridge_lib::db::queries::insert_project(&sm.conn, &project).unwrap();
+    contextbridge_lib::db::queries::insert_project(sm.conn(), &project).unwrap();
 
     let result =
-        contextbridge_lib::core::project_scanner::scan_and_persist(&sm.conn, &project).unwrap();
+        contextbridge_lib::engine::project_scanner::scan_and_persist(sm.conn(), &project).unwrap();
 
     assert!(
         result.tech_stack.iter().any(|t| t.name == "Rust"),
@@ -135,6 +135,6 @@ edition = "2021"
     );
 
     // Verify data was persisted
-    let tech = contextbridge_lib::db::queries::get_tech_stack(&sm.conn, "test-scan").unwrap();
+    let tech = contextbridge_lib::db::queries::get_tech_stack(sm.conn(), "test-scan").unwrap();
     assert!(!tech.is_empty(), "Tech stack should have been persisted");
 }

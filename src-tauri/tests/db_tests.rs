@@ -10,7 +10,7 @@ fn setup_db() -> contextbridge_lib::db::StorageManager {
 #[test]
 fn test_create_and_list_projects() {
     let sm = setup_db();
-    let conn = &sm.conn;
+    let conn = sm.conn();
 
     let project = Project {
         id: "p1".to_string(),
@@ -31,7 +31,7 @@ fn test_create_and_list_projects() {
 #[test]
 fn test_insert_and_query_tech_stack() {
     let sm = setup_db();
-    let conn = &sm.conn;
+    let conn = sm.conn();
 
     // Insert a project first
     let project = Project {
@@ -63,7 +63,7 @@ fn test_insert_and_query_tech_stack() {
 #[test]
 fn test_assemble_context() {
     let sm = setup_db();
-    let conn = &sm.conn;
+    let conn = sm.conn();
 
     // Insert project
     let project = Project {

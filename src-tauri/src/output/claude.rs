@@ -82,8 +82,7 @@ fn write_overview(out: &mut String, ctx: &ProjectContext) -> Result<(), AppError
         "This project uses **{}** and is located at `{}`.\n",
         techs.join(", "),
         ctx.project.root_path,
-    )
-    ?;
+    )?;
     Ok(())
 }
 
@@ -205,10 +204,8 @@ fn write_recent_changes(out: &mut String, ctx: &ProjectContext) -> Result<(), Ap
             out,
             "- `{short}` **{}** — {}",
             change.change_type, change.summary
-        )
-        ?;
+        )?;
     }
     writeln!(out)?;
     Ok(())
 }
-

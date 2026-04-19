@@ -102,22 +102,27 @@ fn sync_to_tool_with_context(
         AppError::Internal(format!("Failed to create directory {}: {e}", dir.display()))
     })?;
 
-    let file_path = dir.join(&filename);
-
-    // Write file
-    std::fs::write(&file_path, &content)
-        .map_err(|e| AppError::Internal(format!("Failed to write {}: {e}", file_path.display())))?;
-
-    // Verify the WRITTEN file resolves inside the project root
-    let canonical_file = std::fs::canonicalize(&file_path)
-        .map_err(|_| AppError::InvalidInput("Cannot resolve output file".into()))?;
-    if !canonical_file.starts_with(&canonical_root) {
-        // Remove the escaped file
-        let _ = std::fs::remove_file(&canonical_file);
+    // Resolve the canonical path of the output directory BEFORE writing
+    let canonical_dir = std::fs::canonicalize(&dir)
+        .map_err(|_| AppError::InvalidInput("Cannot resolve output directory".into()))?;
+    if !canonical_dir.starts_with(&canonical_root) {
         return Err(AppError::InvalidInput(
             "Output path escapes project root".into(),
         ));
     }
+
+    let file_path = canonical_dir.join(&filename);
+
+    // Final validation: ensure the resolved file path stays under root
+    if !file_path.starts_with(&canonical_root) {
+        return Err(AppError::InvalidInput(
+            "Output file path escapes project root".into(),
+        ));
+    }
+
+    // Write file only after path validation
+    std::fs::write(&file_path, &content)
+        .map_err(|e| AppError::Internal(format!("Failed to write {}: {e}", file_path.display())))?;
 
     let output_path_str = file_path.to_string_lossy().to_string();
 
