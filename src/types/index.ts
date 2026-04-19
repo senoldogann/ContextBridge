@@ -53,6 +53,22 @@ export interface SyncState {
   synced_at: string;
 }
 
+/** Result of a project context refresh/scan. */
+export interface ContextRefreshResult {
+  project_id: string;
+  tech_count: number;
+  file_count: number;
+  commit_count: number;
+  scan_duration_ms: number;
+}
+
+/** Event emitted when watched files change. */
+export interface FileChangeEvent {
+  project_id: string;
+  changed_paths: string[];
+  event_type: "created" | "modified" | "removed";
+}
+
 /** Fully assembled context for a project — the main data payload. */
 export interface ProjectContext {
   project: Project;

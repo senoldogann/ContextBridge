@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { ContextNote, Project, ProjectContext } from "@/types";
+import type { ContextNote, ContextRefreshResult, Project, ProjectContext } from "@/types";
 
 /** List all registered projects. */
 export async function listProjects(): Promise<Project[]> {
@@ -19,6 +19,16 @@ export async function removeProject(id: string): Promise<void> {
 /** Get the full assembled context for a project. */
 export async function getProjectContext(projectId: string): Promise<ProjectContext> {
   return invoke<ProjectContext>("get_project_context", { projectId });
+}
+
+/** Trigger a full scan of a project directory and git repo. */
+export async function scanProject(projectId: string): Promise<ContextRefreshResult> {
+  return invoke<ContextRefreshResult>("scan_project", { projectId });
+}
+
+/** Refresh project context (full rescan). */
+export async function refreshProjectContext(projectId: string): Promise<ContextRefreshResult> {
+  return invoke<ContextRefreshResult>("refresh_project_context", { projectId });
 }
 
 /** Search context notes via full-text search. */

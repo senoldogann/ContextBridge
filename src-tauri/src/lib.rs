@@ -6,14 +6,14 @@
 //! IPC commands, file watching, and context output formatting.
 
 mod commands;
-#[allow(unused)] // Phase 2: wired into commands
-mod core;
+pub mod core;
 pub mod db;
 pub mod errors;
 #[allow(unused)] // Phase 3: wired into commands
 mod output;
 pub mod state;
 
+use core::watcher::WatcherSupervisor;
 use state::AppState;
 use std::fs;
 use tauri::{
@@ -52,7 +52,9 @@ pub fn run() {
             let storage = db::StorageManager::new(&db_path)
                 .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
-            app.manage(AppState::new(storage));
+            let watcher = WatcherSupervisor::new(app.handle().clone());
+
+            app.manage(AppState::new(storage, watcher));
 
             // Build tray menu
             let quit = MenuItem::with_id(app, "quit", "Quit ContextBridge", true, None::<&str>)?;
@@ -76,6 +78,8 @@ pub fn run() {
             commands::projects::add_project,
             commands::projects::remove_project,
             commands::projects::get_project_context,
+            commands::projects::scan_project,
+            commands::projects::refresh_project_context,
             commands::context::search_context,
             commands::settings::get_setting,
             commands::settings::set_setting,

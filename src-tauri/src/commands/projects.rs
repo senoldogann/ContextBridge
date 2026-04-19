@@ -1,5 +1,6 @@
 //! Project CRUD commands exposed over Tauri IPC.
 
+use crate::core::context_engine::{self, RefreshOptions};
 use crate::db::{models::Project, queries};
 use crate::errors::AppError;
 use crate::state::AppState;
@@ -17,7 +18,7 @@ pub fn list_projects(state: State<'_, AppState>) -> Result<Vec<Project>, AppErro
 ///
 /// Validates that the name is non-empty and the path is an existing
 /// absolute directory. The path is canonicalized to resolve symlinks
-/// and `..` segments.
+/// and `..` segments. Automatically scans the project after adding.
 #[tauri::command]
 pub fn add_project(
     state: State<'_, AppState>,
@@ -50,12 +51,30 @@ pub fn add_project(
         updated_at: now,
     };
     queries::insert_project(&storage.conn, &project)?;
+
+    // Auto-scan after adding
+    if let Err(e) = context_engine::refresh_context(&storage, &project.id, &RefreshOptions::default()) {
+        tracing::warn!(project_id = %project.id, error = %e, "Auto-scan failed after adding project");
+    }
+
+    // Start watching the project directory
+    if let Ok(mut watcher) = state.watcher.lock() {
+        if let Err(e) = watcher.watch_project(project.id.clone(), canonical) {
+            tracing::warn!(project_id = %project.id, error = %e, "Failed to start file watcher");
+        }
+    }
+
     Ok(project)
 }
 
-/// Remove a project by ID.
+/// Remove a project by ID. Stops its watcher first.
 #[tauri::command]
 pub fn remove_project(state: State<'_, AppState>, id: String) -> Result<(), AppError> {
+    // Stop watcher for this project
+    if let Ok(mut watcher) = state.watcher.lock() {
+        let _ = watcher.unwatch_project(&id);
+    }
+
     let storage = state.storage.lock().map_err(|_| AppError::Internal("State unavailable".into()))?;
     queries::delete_project(&storage.conn, &id)
 }
@@ -68,4 +87,24 @@ pub fn get_project_context(
 ) -> Result<ProjectContext, AppError> {
     let storage = state.storage.lock().map_err(|_| AppError::Internal("State unavailable".into()))?;
     queries::assemble_context(&storage.conn, &project_id)
+}
+
+/// Trigger a full scan of a project's directory and git repo.
+#[tauri::command]
+pub fn scan_project(
+    state: State<'_, AppState>,
+    project_id: String,
+) -> Result<context_engine::ContextRefreshResult, AppError> {
+    let storage = state.storage.lock().map_err(|_| AppError::Internal("State unavailable".into()))?;
+    context_engine::refresh_context(&storage, &project_id, &RefreshOptions::default())
+}
+
+/// Refresh project context (alias for scan_project with custom options).
+#[tauri::command]
+pub fn refresh_project_context(
+    state: State<'_, AppState>,
+    project_id: String,
+) -> Result<context_engine::ContextRefreshResult, AppError> {
+    let storage = state.storage.lock().map_err(|_| AppError::Internal("State unavailable".into()))?;
+    context_engine::refresh_context(&storage, &project_id, &RefreshOptions::default())
 }
