@@ -84,3 +84,11 @@ export interface AppSettings {
   autoSync: boolean;
   enabledAdapters: string[];
 }
+
+/** Result of a sync operation (writing a formatted output file). */
+export interface SyncResult {
+  target: string;
+  output_path: string;
+  written: boolean;
+  content_hash: string;
+}

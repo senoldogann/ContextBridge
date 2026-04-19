@@ -113,3 +113,30 @@ pub fn refresh_project_context(
 ) -> Result<context_engine::ContextRefreshResult, AppError> {
     scan_project(state, project_id)
 }
+
+/// Sync project context to a specific AI tool target.
+#[tauri::command]
+pub fn sync_to_tool(
+    state: State<'_, AppState>,
+    project_id: String,
+    target: String,
+) -> Result<crate::core::sync::SyncResult, AppError> {
+    let storage = state
+        .storage
+        .lock()
+        .map_err(|_| AppError::Internal("State unavailable".into()))?;
+    crate::core::sync::sync_to_tool(&storage, &project_id, &target)
+}
+
+/// Sync project context to all enabled AI tool targets.
+#[tauri::command]
+pub fn sync_all_tools(
+    state: State<'_, AppState>,
+    project_id: String,
+) -> Result<Vec<crate::core::sync::SyncResult>, AppError> {
+    let storage = state
+        .storage
+        .lock()
+        .map_err(|_| AppError::Internal("State unavailable".into()))?;
+    crate::core::sync::sync_all(&storage, &project_id)
+}

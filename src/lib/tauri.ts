@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { ContextNote, ContextRefreshResult, Project, ProjectContext } from "@/types";
+import type { ContextNote, ContextRefreshResult, Project, ProjectContext, SyncResult } from "@/types";
 
 /** List all registered projects. */
 export async function listProjects(): Promise<Project[]> {
@@ -44,4 +44,14 @@ export async function getSetting(key: string): Promise<string | null> {
 /** Set a setting value by key. */
 export async function setSetting(key: string, value: string): Promise<void> {
   return invoke<void>("set_setting", { key, value });
+}
+
+/** Sync project context to a specific AI tool target. */
+export async function syncToTool(projectId: string, target: string): Promise<SyncResult> {
+  return invoke<SyncResult>("sync_to_tool", { projectId, target });
+}
+
+/** Sync project context to all enabled AI tool targets. */
+export async function syncAllTools(projectId: string): Promise<SyncResult[]> {
+  return invoke<SyncResult[]>("sync_all_tools", { projectId });
 }
