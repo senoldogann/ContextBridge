@@ -27,7 +27,7 @@ pub fn add_project(
 ) -> Result<Project, AppError> {
     // Validate name
     let name = name.trim().to_string();
-    if name.is_empty() || name.len() > 255 {
+    if name.is_empty() || name.chars().count() > 255 {
         return Err(AppError::InvalidInput(
             "Project name must be 1–255 characters".into(),
         ));
@@ -41,21 +41,27 @@ pub fn add_project(
         return Err(AppError::InvalidInput("Path must be a directory".into()));
     }
 
-    let storage = state.storage.lock().map_err(|_| AppError::Internal("State unavailable".into()))?;
-    let now = chrono::Utc::now().to_rfc3339();
-    let project = Project {
-        id: uuid::Uuid::new_v4().to_string(),
-        name,
-        root_path: canonical.to_string_lossy().to_string(),
-        created_at: now.clone(),
-        updated_at: now,
-    };
-    queries::insert_project(&storage.conn, &project)?;
+    let project = {
+        let storage = state.storage.lock().map_err(|_| AppError::Internal("State unavailable".into()))?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let project = Project {
+            id: uuid::Uuid::new_v4().to_string(),
+            name,
+            root_path: canonical.to_string_lossy().to_string(),
+            created_at: now.clone(),
+            updated_at: now,
+        };
+        queries::insert_project(&storage.conn, &project)?;
+        project
+    }; // storage lock released
 
-    // Auto-scan after adding
-    if let Err(e) = context_engine::refresh_context(&storage, &project.id, &RefreshOptions::default()) {
-        tracing::warn!(project_id = %project.id, error = %e, "Auto-scan failed after adding project");
-    }
+    // Auto-scan after adding (re-acquire lock briefly)
+    {
+        let storage = state.storage.lock().map_err(|_| AppError::Internal("State unavailable".into()))?;
+        if let Err(e) = context_engine::refresh_context(&storage, &project.id, &RefreshOptions::default()) {
+            tracing::warn!(project_id = %project.id, error = %e, "Auto-scan failed after adding project");
+        }
+    } // storage lock released
 
     // Start watching the project directory
     if let Ok(mut watcher) = state.watcher.lock() {
@@ -99,12 +105,11 @@ pub fn scan_project(
     context_engine::refresh_context(&storage, &project_id, &RefreshOptions::default())
 }
 
-/// Refresh project context (alias for scan_project with custom options).
+/// Refresh project context (delegates to scan_project).
 #[tauri::command]
 pub fn refresh_project_context(
     state: State<'_, AppState>,
     project_id: String,
 ) -> Result<context_engine::ContextRefreshResult, AppError> {
-    let storage = state.storage.lock().map_err(|_| AppError::Internal("State unavailable".into()))?;
-    context_engine::refresh_context(&storage, &project_id, &RefreshOptions::default())
+    scan_project(state, project_id)
 }

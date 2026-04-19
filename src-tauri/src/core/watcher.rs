@@ -17,36 +17,11 @@ use tauri::{AppHandle, Emitter};
 
 use crate::errors::AppError;
 
-// ── Ignore list ──────────────────────────────────────────────────────
-
-/// Directories whose changes are never interesting.
-const IGNORED_DIRS: &[&str] = &[
-    ".git",
-    "node_modules",
-    "target",
-    "dist",
-    "build",
-    ".next",
-    "__pycache__",
-    ".venv",
-    "venv",
-    ".tox",
-    ".mypy_cache",
-    ".pytest_cache",
-    "vendor",
-    "Pods",
-    ".gradle",
-    ".idea",
-    ".vscode",
-    "coverage",
-    ".nyc_output",
-];
-
 /// Returns `true` if any component of `path` is in the ignore list.
 fn is_ignored(path: &Path) -> bool {
     path.components().any(|c| {
         let s = c.as_os_str().to_str().unwrap_or("");
-        IGNORED_DIRS.contains(&s)
+        super::IGNORED_DIRS.contains(&s)
     })
 }
 
@@ -201,6 +176,12 @@ impl WatcherSupervisor {
     }
 }
 
+impl Drop for WatcherSupervisor {
+    fn drop(&mut self) {
+        self.stop_all();
+    }
+}
+
 // ── Watcher thread ───────────────────────────────────────────────────
 
 /// The blocking function that runs on a dedicated OS thread.
@@ -272,7 +253,7 @@ fn watcher_thread(
                 );
             }
             Err(mpsc::RecvTimeoutError::Timeout) => {
-                flush_pending(&mut pending, &app_handle, &project_id);
+                flush_pending(&mut pending, &app_handle, &project_id, &path);
             }
             Err(mpsc::RecvTimeoutError::Disconnected) => {
                 tracing::debug!(
@@ -285,7 +266,7 @@ fn watcher_thread(
     }
 
     // Flush anything remaining before exit.
-    flush_pending(&mut pending, &app_handle, &project_id);
+    flush_pending(&mut pending, &app_handle, &project_id, &path);
     tracing::debug!(project_id = %project_id, "Watcher thread exiting");
 }
 
@@ -294,18 +275,20 @@ fn flush_pending(
     pending: &mut HashMap<PathBuf, (&'static str, Instant)>,
     app_handle: &AppHandle,
     project_id: &str,
+    project_root: &Path,
 ) {
     if pending.is_empty() {
         return;
     }
 
-    // Group paths by event type.
+    // Group paths by event type, emitting relative paths.
     let mut grouped: HashMap<&str, Vec<String>> = HashMap::new();
     for (path, (etype, _)) in pending.drain() {
-        grouped
-            .entry(etype)
-            .or_default()
-            .push(path.to_string_lossy().into_owned());
+        let rel = path.strip_prefix(project_root)
+            .unwrap_or(&path)
+            .to_string_lossy()
+            .into_owned();
+        grouped.entry(etype).or_default().push(rel);
     }
 
     for (event_type, paths) in grouped {

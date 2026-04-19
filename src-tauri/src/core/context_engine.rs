@@ -103,10 +103,7 @@ pub fn refresh_context(
 
     let root = Path::new(&project.root_path);
     if !root.exists() {
-        return Err(AppError::InvalidInput(format!(
-            "project path no longer exists: {}",
-            project.root_path
-        )));
+        return Err(AppError::InvalidInput("Project path no longer exists on disk".into()));
     }
 
     tracing::info!(project_id, path = %project.root_path, "Starting context refresh");
@@ -175,10 +172,7 @@ pub fn partial_refresh(
     let root = Path::new(&project.root_path);
 
     if !root.exists() {
-        return Err(AppError::InvalidInput(format!(
-            "project path no longer exists: {}",
-            project.root_path
-        )));
+        return Err(AppError::InvalidInput("Project path no longer exists on disk".into()));
     }
 
     tracing::debug!(
@@ -190,6 +184,13 @@ pub fn partial_refresh(
     let mut config_changed = false;
 
     for rel_path in changed_paths {
+        // Reject any path that attempts traversal
+        let rel = Path::new(rel_path);
+        if rel.is_absolute() || rel.components().any(|c| matches!(c, std::path::Component::ParentDir)) {
+            tracing::warn!(project_id, path = %rel_path, "Rejected path with traversal components");
+            continue;
+        }
+
         let file_name = Path::new(rel_path)
             .file_name()
             .map(|n| n.to_string_lossy().to_string())
@@ -200,6 +201,14 @@ pub fn partial_refresh(
         }
 
         let abs = root.join(rel_path);
+
+        // Also verify canonical path is within root
+        if let Ok(canonical) = abs.canonicalize() {
+            if !canonical.starts_with(&root) {
+                tracing::warn!(project_id, path = %rel_path, "Path escapes project root — skipping");
+                continue;
+            }
+        }
 
         if abs.exists() {
             // File still exists — update its entry.
@@ -328,7 +337,7 @@ fn generate_tech_summary_note(tech_stack: &[TechEntry], project_id: &str) -> Con
     // Also build a one-line title.
     let primary_names: Vec<&str> = tech_stack
         .iter()
-        .filter(|t| t.confidence >= 80.0)
+        .filter(|t| t.confidence >= 0.80)
         .take(4)
         .map(|t| t.name.as_str())
         .collect();
@@ -533,15 +542,28 @@ fn classify_simple(ext: &str) -> String {
     }
 }
 
-/// Compute SHA-256 hash for a file if it is under 1 MB.
+/// Compute SHA-256 hash for a file if it is under 1 MB (streaming).
 fn compute_hash_if_small(path: &Path) -> Option<String> {
     use sha2::{Digest, Sha256};
+    use std::io::Read;
 
-    let meta = std::fs::metadata(path).ok()?;
+    let mut file = std::fs::File::open(path).ok()?;
+    let meta = file.metadata().ok()?;
     if meta.len() > 1_048_576 {
         return None;
     }
-    let data = std::fs::read(path).ok()?;
-    let hash = Sha256::digest(&data);
-    Some(format!("{hash:x}"))
+
+    let mut hasher = Sha256::new();
+    let mut buf = [0u8; 8192];
+    let mut total: u64 = 0;
+    loop {
+        let n = file.read(&mut buf).ok()?;
+        if n == 0 { break; }
+        total += n as u64;
+        if total > 1_048_576 {
+            return None;
+        }
+        hasher.update(&buf[..n]);
+    }
+    Some(format!("{:x}", hasher.finalize()))
 }

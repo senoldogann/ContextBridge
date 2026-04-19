@@ -50,28 +50,11 @@ pub struct ScannedFile {
 // Constants
 // ---------------------------------------------------------------------------
 
-/// Directories that should never be descended into.
-const IGNORED_DIRS: &[&str] = &[
-    ".git",
-    "node_modules",
-    "target",
-    "dist",
-    "build",
-    ".next",
-    "__pycache__",
-    ".venv",
-    "venv",
-    ".tox",
-    ".mypy_cache",
-    ".pytest_cache",
-    "vendor",
-    "Pods",
-    ".gradle",
-    ".idea",
-    ".vscode",
-    "coverage",
-    ".nyc_output",
-];
+/// Maximum directory depth to traverse.
+const MAX_DEPTH: usize = 20;
+
+/// Maximum number of files to scan before truncating.
+const MAX_FILES: usize = 50_000;
 
 /// Hidden file names that should *not* be skipped.
 const HIDDEN_ALLOWLIST: &[&str] = &[".gitignore", ".env.example"];
@@ -91,13 +74,13 @@ pub fn scan_project(root_path: &Path) -> Result<ScanResult, AppError> {
 
     tracing::info!("Scanning project at {}", root.display());
 
-    let ignored: HashSet<&str> = IGNORED_DIRS.iter().copied().collect();
+    let ignored: HashSet<&str> = super::IGNORED_DIRS.iter().copied().collect();
     let allowed_hidden: HashSet<&str> = HIDDEN_ALLOWLIST.iter().copied().collect();
 
     let mut files: Vec<ScannedFile> = Vec::new();
     let mut total_size: u64 = 0;
 
-    let walker = WalkDir::new(&root).follow_links(false).into_iter();
+    let walker = WalkDir::new(&root).follow_links(false).max_depth(MAX_DEPTH).into_iter();
 
     for entry in walker.filter_entry(|e| should_visit(e, &ignored, &allowed_hidden)) {
         let entry = match entry {
@@ -110,6 +93,11 @@ pub fn scan_project(root_path: &Path) -> Result<ScanResult, AppError> {
 
         if !entry.file_type().is_file() {
             continue;
+        }
+
+        if files.len() >= MAX_FILES {
+            tracing::warn!("File limit ({MAX_FILES}) reached — truncating scan");
+            break;
         }
 
         let abs = entry.path();
@@ -300,8 +288,15 @@ fn classify_file(rel_path: &str, ext: &str, language: Option<&str>) -> String {
 
     let rel_lower = rel_path.to_lowercase();
 
-    // Test files
-    if rel_lower.contains("test") || rel_lower.contains("spec") || rel_lower.contains("__tests__")
+    // Test files — use path-segment or file-name conventions
+    if rel_lower.contains("/test/")
+        || rel_lower.contains("/tests/")
+        || rel_lower.contains("/__tests__/")
+        || name.contains(".test.")
+        || name.contains(".spec.")
+        || name.contains("_test.")
+        || name.starts_with("test_")
+        || name == "conftest.py"
     {
         return "test".into();
     }
@@ -379,17 +374,29 @@ fn classify_file(rel_path: &str, ext: &str, language: Option<&str>) -> String {
 // Content hashing
 // ---------------------------------------------------------------------------
 
-/// Compute the SHA-256 hex digest of a file; returns `None` on read errors.
+/// Compute the SHA-256 hex digest of a file (streaming); returns `None` on read errors or if > 1 MB.
 fn compute_hash(path: &Path) -> Option<String> {
-    let data = match fs::read(path) {
-        Ok(d) => d,
-        Err(e) => {
-            tracing::debug!("hash read error for {}: {e}", path.display());
+    use std::io::Read;
+
+    let mut file = std::fs::File::open(path).ok()?;
+    let meta = file.metadata().ok()?;
+    if meta.len() > 1_048_576 {
+        return None;
+    }
+
+    let mut hasher = Sha256::new();
+    let mut buf = [0u8; 8192];
+    let mut total: u64 = 0;
+    loop {
+        let n = file.read(&mut buf).ok()?;
+        if n == 0 { break; }
+        total += n as u64;
+        if total > 1_048_576 {
             return None;
         }
-    };
-    let digest = Sha256::digest(&data);
-    Some(format!("{digest:x}"))
+        hasher.update(&buf[..n]);
+    }
+    Some(format!("{:x}", hasher.finalize()))
 }
 
 // ---------------------------------------------------------------------------
