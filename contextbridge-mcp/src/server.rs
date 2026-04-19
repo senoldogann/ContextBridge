@@ -6,7 +6,7 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use tokio::io::{self, AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::io::{self, AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 use tracing::{debug, error};
 
 use crate::db;
@@ -230,25 +230,35 @@ fn handle_request(req: &Request) -> Option<Response> {
 pub async fn run() -> anyhow::Result<()> {
     let stdin = io::stdin();
     let mut stdout = io::stdout();
-    let mut reader = BufReader::new(stdin);
+    let reader = BufReader::new(stdin);
+    // Wrap the reader with a byte limit so we never buffer more than
+    // MAX_REQUEST_BYTES before finding a newline.
+    const MAX_REQUEST_BYTES: u64 = 1_048_576; // 1 MB
+    let mut limited = BufReader::new(reader.into_inner().take(MAX_REQUEST_BYTES));
     let mut line = String::new();
-
-    const MAX_REQUEST_BYTES: usize = 1_048_576; // 1 MB
 
     loop {
         line.clear();
-        let n = reader.read_line(&mut line).await?;
-        if n == 0 {
-            debug!("stdin closed, shutting down");
-            break;
-        }
+        // Reset the remaining byte limit for each new line.
+        limited.get_mut().set_limit(MAX_REQUEST_BYTES);
 
-        if line.len() > MAX_REQUEST_BYTES {
+        let n = limited.read_line(&mut line).await?;
+        if n == 0 {
+            // Either stdin closed or the limit was hit without a newline.
+            if line.is_empty() {
+                debug!("stdin closed, shutting down");
+                break;
+            }
+            // Limit reached without a newline — reject as too large.
             let resp = Response::err(Value::Null, -32600, "request too large");
             let out = serde_json::to_string(&resp)?;
             stdout.write_all(out.as_bytes()).await?;
             stdout.write_all(b"\n").await?;
             stdout.flush().await?;
+            // Drain the rest of the oversized line so the next read starts fresh.
+            let mut discard = String::new();
+            limited.get_mut().set_limit(MAX_REQUEST_BYTES);
+            let _ = limited.read_line(&mut discard).await;
             continue;
         }
 

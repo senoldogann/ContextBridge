@@ -81,16 +81,22 @@ pub fn add_note(
         .storage
         .lock()
         .map_err(|_| AppError::Internal("State unavailable".into()))?;
-    queries::insert_context_note(&storage.conn, &note)?;
+    let tx = storage.conn.unchecked_transaction()?;
+    queries::insert_context_note(&tx, &note)?;
+    tx.commit()?;
     Ok(note)
 }
 
-/// Delete a context note by its ID.
+/// Delete a context note by its ID, verifying it belongs to the given project.
 #[tauri::command]
-pub fn delete_note(state: State<'_, AppState>, note_id: String) -> Result<(), AppError> {
+pub fn delete_note(
+    state: State<'_, AppState>,
+    project_id: String,
+    note_id: String,
+) -> Result<(), AppError> {
     let storage = state
         .storage
         .lock()
         .map_err(|_| AppError::Internal("State unavailable".into()))?;
-    queries::delete_context_note(&storage.conn, &note_id)
+    queries::delete_context_note(&storage.conn, &note_id, &project_id)
 }

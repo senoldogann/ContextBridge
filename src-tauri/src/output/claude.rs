@@ -27,8 +27,7 @@ impl ContextFormatter for ClaudeFormatter {
             out,
             "# {}\n",
             crate::output::sanitize_for_heading(&ctx.project.name)
-        )
-        .map_err(|e| AppError::Other(e.to_string()))?;
+        )?;
 
         // Overview
         write_overview(&mut out, ctx)?;
@@ -77,14 +76,14 @@ fn write_overview(out: &mut String, ctx: &ProjectContext) -> Result<(), AppError
     if techs.is_empty() {
         return Ok(());
     }
-    writeln!(out, "## Overview\n").map_err(fmt_err)?;
+    writeln!(out, "## Overview\n")?;
     writeln!(
         out,
         "This project uses **{}** and is located at `{}`.\n",
         techs.join(", "),
         ctx.project.root_path,
     )
-    .map_err(fmt_err)?;
+    ?;
     Ok(())
 }
 
@@ -93,14 +92,14 @@ fn write_tech_stack(out: &mut String, ctx: &ProjectContext) -> Result<(), AppErr
     if ctx.tech_stack.is_empty() {
         return Ok(());
     }
-    writeln!(out, "## Tech Stack\n").map_err(fmt_err)?;
-    writeln!(out, "| Name | Category | Version |").map_err(fmt_err)?;
-    writeln!(out, "|------|----------|---------|").map_err(fmt_err)?;
+    writeln!(out, "## Tech Stack\n")?;
+    writeln!(out, "| Name | Category | Version |")?;
+    writeln!(out, "|------|----------|---------|")?;
     for entry in &ctx.tech_stack {
         let version = entry.version.as_deref().unwrap_or("—");
-        writeln!(out, "| {} | {} | {} |", entry.name, entry.category, version).map_err(fmt_err)?;
+        writeln!(out, "| {} | {} | {} |", entry.name, entry.category, version)?;
     }
-    writeln!(out).map_err(fmt_err)?;
+    writeln!(out)?;
     Ok(())
 }
 
@@ -122,23 +121,23 @@ fn write_build_run(
         return Ok(());
     }
 
-    writeln!(out, "## Build & Run\n").map_err(fmt_err)?;
+    writeln!(out, "## Build & Run\n")?;
 
     for note in &build_notes {
-        writeln!(out, "### {}\n", note.title).map_err(fmt_err)?;
-        writeln!(out, "{}\n", note.content).map_err(fmt_err)?;
+        writeln!(out, "### {}\n", note.title)?;
+        writeln!(out, "{}\n", note.content)?;
     }
 
     if !auto_cmds.is_empty() {
         if build_notes.is_empty() {
-            writeln!(out, "Auto-detected commands:\n").map_err(fmt_err)?;
+            writeln!(out, "Auto-detected commands:\n")?;
         }
-        writeln!(out, "```bash").map_err(fmt_err)?;
+        writeln!(out, "```bash")?;
         for (label, cmd) in &auto_cmds {
-            writeln!(out, "# {label}").map_err(fmt_err)?;
-            writeln!(out, "{cmd}").map_err(fmt_err)?;
+            writeln!(out, "# {label}")?;
+            writeln!(out, "{cmd}")?;
         }
-        writeln!(out, "```\n").map_err(fmt_err)?;
+        writeln!(out, "```\n")?;
     }
 
     Ok(())
@@ -161,10 +160,10 @@ fn write_notes_section(
         return Ok(());
     }
 
-    writeln!(out, "## {heading}\n").map_err(fmt_err)?;
+    writeln!(out, "## {heading}\n")?;
     for note in &notes {
-        writeln!(out, "### {}\n", note.title).map_err(fmt_err)?;
-        writeln!(out, "{}\n", note.content).map_err(fmt_err)?;
+        writeln!(out, "### {}\n", note.title)?;
+        writeln!(out, "{}\n", note.content)?;
     }
     Ok(())
 }
@@ -183,11 +182,11 @@ fn write_remaining_notes(
         return Ok(());
     }
 
-    writeln!(out, "## Context Notes\n").map_err(fmt_err)?;
+    writeln!(out, "## Context Notes\n")?;
     for (category, notes) in &remaining {
-        writeln!(out, "### {}\n", category).map_err(fmt_err)?;
+        writeln!(out, "### {}\n", category)?;
         for note in *notes {
-            writeln!(out, "**{}**: {}\n", note.title, note.content).map_err(fmt_err)?;
+            writeln!(out, "**{}**: {}\n", note.title, note.content)?;
         }
     }
     Ok(())
@@ -198,7 +197,7 @@ fn write_recent_changes(out: &mut String, ctx: &ProjectContext) -> Result<(), Ap
     if ctx.recent_changes.is_empty() {
         return Ok(());
     }
-    writeln!(out, "## Recent Changes\n").map_err(fmt_err)?;
+    writeln!(out, "## Recent Changes\n")?;
     for change in ctx.recent_changes.iter().take(15) {
         let hash = change.commit_hash.as_deref().unwrap_or("");
         let short = hash.get(..7).unwrap_or(hash);
@@ -207,13 +206,9 @@ fn write_recent_changes(out: &mut String, ctx: &ProjectContext) -> Result<(), Ap
             "- `{short}` **{}** — {}",
             change.change_type, change.summary
         )
-        .map_err(fmt_err)?;
+        ?;
     }
-    writeln!(out).map_err(fmt_err)?;
+    writeln!(out)?;
     Ok(())
 }
 
-/// Convert a `fmt::Error` into `AppError`.
-fn fmt_err(e: std::fmt::Error) -> AppError {
-    AppError::Other(e.to_string())
-}

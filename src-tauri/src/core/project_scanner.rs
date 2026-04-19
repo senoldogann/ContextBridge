@@ -162,6 +162,8 @@ pub fn scan_and_persist(conn: &Connection, project: &Project) -> Result<ScanResu
     let root = Path::new(&project.root_path);
     let result = scan_project(root)?;
 
+    let tx = conn.unchecked_transaction()?;
+
     // Persist tech stack
     for entry in &result.tech_stack {
         let persisted = TechEntry {
@@ -173,13 +175,13 @@ pub fn scan_and_persist(conn: &Connection, project: &Project) -> Result<ScanResu
             confidence: entry.confidence,
             source: entry.source.clone(),
         };
-        queries::upsert_tech_stack(conn, &persisted)?;
+        queries::upsert_tech_stack(&tx, &persisted)?;
     }
 
     // Persist files
     for f in &result.files {
         queries::upsert_file(
-            conn,
+            &tx,
             &project.id,
             &f.rel_path,
             &f.file_type,
@@ -188,6 +190,8 @@ pub fn scan_and_persist(conn: &Connection, project: &Project) -> Result<ScanResu
             f.content_hash.as_deref(),
         )?;
     }
+
+    tx.commit()?;
 
     tracing::info!(
         "Persisted scan for project '{}': {} files, {} tech entries",

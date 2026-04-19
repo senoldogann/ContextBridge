@@ -74,6 +74,6 @@ export async function addNote(
 }
 
 /** Delete a context note by ID. */
-export async function deleteNote(noteId: string): Promise<void> {
-  return invoke<undefined>("delete_note", { noteId });
+export async function deleteNote(projectId: string, noteId: string): Promise<void> {
+  return invoke<undefined>("delete_note", { projectId, noteId });
 }

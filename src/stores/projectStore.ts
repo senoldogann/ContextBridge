@@ -138,7 +138,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   deleteNote: async (projectId, noteId) => {
     try {
-      await tauri.deleteNote(noteId);
+      await tauri.deleteNote(projectId, noteId);
       await get().loadContext(projectId);
     } catch (err) {
       console.error("Failed to delete note:", err);

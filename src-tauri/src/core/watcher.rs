@@ -78,6 +78,9 @@ impl WatcherSupervisor {
         }
     }
 
+    /// Maximum number of projects that can be watched simultaneously.
+    const MAX_WATCHED_PROJECTS: usize = 50;
+
     /// Start watching a project directory.
     ///
     /// A dedicated OS thread is spawned that runs the blocking
@@ -90,6 +93,13 @@ impl WatcherSupervisor {
                 "Project is already being watched — skipping"
             );
             return Ok(());
+        }
+
+        if self.watchers.len() >= Self::MAX_WATCHED_PROJECTS {
+            return Err(AppError::InvalidInput(format!(
+                "Cannot watch more than {} projects simultaneously",
+                Self::MAX_WATCHED_PROJECTS
+            )));
         }
 
         if !path.is_dir() {

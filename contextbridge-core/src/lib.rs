@@ -128,3 +128,9 @@ pub enum AppError {
     #[error("{0}")]
     Other(String),
 }
+
+impl From<std::fmt::Error> for AppError {
+    fn from(e: std::fmt::Error) -> Self {
+        AppError::Other(e.to_string())
+    }
+}

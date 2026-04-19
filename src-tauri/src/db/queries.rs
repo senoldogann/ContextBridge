@@ -179,14 +179,21 @@ pub fn list_project_files(
 // Context notes
 // ---------------------------------------------------------------------------
 
-/// Delete a context note by its ID (also removes FTS entry, transactional).
-pub fn delete_context_note(conn: &Connection, note_id: &str) -> Result<(), AppError> {
+/// Delete a context note by its ID, verifying project ownership (also removes FTS entry, transactional).
+pub fn delete_context_note(
+    conn: &Connection,
+    note_id: &str,
+    project_id: &str,
+) -> Result<(), AppError> {
     let tx = conn.unchecked_transaction()?;
     tx.execute(
         "DELETE FROM context_fts WHERE note_id = ?1",
         params![note_id],
     )?;
-    let affected = tx.execute("DELETE FROM context_notes WHERE id = ?1", params![note_id])?;
+    let affected = tx.execute(
+        "DELETE FROM context_notes WHERE id = ?1 AND project_id = ?2",
+        params![note_id, project_id],
+    )?;
     if affected == 0 {
         return Err(AppError::NotFound(format!("note {note_id}")));
     }
@@ -194,7 +201,12 @@ pub fn delete_context_note(conn: &Connection, note_id: &str) -> Result<(), AppEr
     Ok(())
 }
 
-/// Insert a new context note.
+/// Insert a new context note and its FTS index entry.
+///
+/// The two inserts (note + FTS) are **not** wrapped in their own transaction
+/// here so this function can be called from within an existing transaction
+/// (e.g. `analyze_and_persist`). Callers that need atomicity for a standalone
+/// insert should wrap the call in their own transaction.
 pub fn insert_context_note(conn: &Connection, note: &ContextNote) -> Result<(), AppError> {
     conn.execute(
         "INSERT INTO context_notes (id, project_id, category, title, content, source, priority, created_at, updated_at)

@@ -88,15 +88,17 @@ pub fn analyze_and_persist(
 ) -> Result<GitAnalysis, AppError> {
     let analysis = analyze_git_repo(repo_path, project_id, 50)?;
 
+    let tx = conn.unchecked_transaction()?;
+
     // Clear previous recent_changes for this project.
-    conn.execute(
+    tx.execute(
         "DELETE FROM recent_changes WHERE project_id = ?1",
         rusqlite::params![project_id],
     )?;
 
     // Persist each commit.
     for change in &analysis.recent_commits {
-        queries::insert_recent_change(conn, change)?;
+        queries::insert_recent_change(&tx, change)?;
     }
 
     // Build a context note summarising the git state.
@@ -113,11 +115,11 @@ pub fn analyze_and_persist(
     );
 
     // Remove any previous git-summary note, then insert the new one.
-    conn.execute(
+    tx.execute(
         "DELETE FROM context_notes WHERE id = ?1",
         rusqlite::params![note_id],
     )?;
-    conn.execute(
+    tx.execute(
         "DELETE FROM context_fts WHERE note_id = ?1",
         rusqlite::params![note_id],
     )?;
@@ -133,7 +135,9 @@ pub fn analyze_and_persist(
         created_at: now.clone(),
         updated_at: now,
     };
-    queries::insert_context_note(conn, &note)?;
+    queries::insert_context_note(&tx, &note)?;
+
+    tx.commit()?;
 
     tracing::info!(project_id, "Git analysis persisted");
 

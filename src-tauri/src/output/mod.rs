@@ -15,7 +15,13 @@ pub const MAX_OUTPUT_BYTES: usize = 512_000;
 /// Check if output has exceeded the size limit and append a truncation notice.
 pub fn check_output_limit(out: &mut String) -> bool {
     if out.len() > MAX_OUTPUT_BYTES {
-        out.truncate(MAX_OUTPUT_BYTES);
+        // Find the last valid UTF-8 char boundary at or before the limit
+        // to avoid panicking on multi-byte characters.
+        let mut trunc_pos = MAX_OUTPUT_BYTES;
+        while !out.is_char_boundary(trunc_pos) {
+            trunc_pos -= 1;
+        }
+        out.truncate(trunc_pos);
         out.push_str("\n\n<!-- Output truncated by ContextBridge (exceeded 512KB limit) -->\n");
         true
     } else {

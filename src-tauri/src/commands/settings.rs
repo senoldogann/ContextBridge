@@ -8,9 +8,14 @@ use tauri::State;
 /// Allowed settings keys.
 const ALLOWED_KEYS: &[&str] = &["theme", "auto_sync", "enabled_adapters"];
 
-/// Retrieve a setting value by key.
+/// Retrieve a setting value by key. Only whitelisted keys are accepted.
 #[tauri::command]
 pub fn get_setting(state: State<'_, AppState>, key: String) -> Result<Option<String>, AppError> {
+    if !ALLOWED_KEYS.contains(&key.as_str()) {
+        return Err(AppError::InvalidInput(format!(
+            "Unknown setting key: {key}"
+        )));
+    }
     let storage = state
         .storage
         .lock()
