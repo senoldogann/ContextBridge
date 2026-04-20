@@ -302,8 +302,7 @@ pub fn partial_refresh(
             format!("{file_count} files changed")
         };
 
-        let files_json =
-            serde_json::to_string(&valid_paths).unwrap_or_else(|_| "[]".to_string());
+        let files_json = serde_json::to_string(&valid_paths).unwrap_or_else(|_| "[]".to_string());
         let now = Utc::now().to_rfc3339();
 
         let change = RecentChange {

@@ -105,10 +105,7 @@ pub fn run() {
                 let (existing_projects, watcher_state) = {
                     let state = app.state::<AppState>();
                     let existing_projects = {
-                        let storage = state
-                            .storage
-                            .lock()
-                            .map_err(|_| "storage lock poisoned")?;
+                        let storage = state.storage.lock().map_err(|_| "storage lock poisoned")?;
                         match queries::list_projects(&storage.conn) {
                             Ok(projects) => projects,
                             Err(error) => {
