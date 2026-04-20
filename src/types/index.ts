@@ -78,9 +78,12 @@ export interface ProjectContext {
   sync_state: SyncState[];
 }
 
+/** Available theme identifiers. */
+export type ThemeId = "light" | "dark" | "system" | "zinc" | "midnight" | "claude" | "ghostty";
+
 /** Application settings. */
 export interface AppSettings {
-  theme: "dark" | "light";
+  theme: ThemeId;
   autoSync: boolean;
   enabledAdapters: string[];
 }

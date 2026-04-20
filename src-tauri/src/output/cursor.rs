@@ -1,6 +1,9 @@
 //! Cursor-format output (`.cursor/rules/contextbridge.mdc`).
 
-use crate::output::{generate_globs_from_tech, group_notes_by_category};
+use crate::output::{
+    collect_important_paths, collect_workspace_manifests, display_workspace_dir,
+    generate_globs_from_tech, group_notes_by_category,
+};
 use contextbridge_core::{AppError, ContextFormatter, ProjectContext};
 use std::fmt::Write;
 use std::path::PathBuf;
@@ -46,6 +49,28 @@ impl ContextFormatter for CursorFormatter {
         }
 
         let groups = group_notes_by_category(&ctx.notes);
+
+        let workspaces = collect_workspace_manifests(&ctx.project.root_path);
+        if !workspaces.is_empty() {
+            writeln!(out, "## Workspace Focus\n")?;
+            for workspace in workspaces.into_iter().take(6) {
+                let location = display_workspace_dir(&workspace.relative_dir);
+                writeln!(out, "- `{location}` — {}", workspace.manifest_name)?;
+            }
+            writeln!(
+                out,
+                "- Keep edits scoped to the closest workspace manifest unless the task spans multiple packages.\n"
+            )?;
+        }
+
+        let important_paths = collect_important_paths(&ctx.project.root_path, &ctx.tech_stack);
+        if !important_paths.is_empty() {
+            writeln!(out, "## Important Paths\n")?;
+            for entry in important_paths.into_iter().take(8) {
+                writeln!(out, "- `{}` — {}", entry.path, entry.purpose)?;
+            }
+            writeln!(out)?;
+        }
 
         // Coding Conventions
         if let Some(notes) = groups.get("conventions") {

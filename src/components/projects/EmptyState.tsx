@@ -2,9 +2,11 @@ import { FolderOpen } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { useAddProject } from "@/hooks/useAddProject";
+import { useProjectStore } from "@/stores/projectStore";
 
 export function EmptyState() {
   const handleAdd = useAddProject();
+  const isAddingProject = useProjectStore((s) => s.isAddingProject);
 
   return (
     <main className="flex flex-1 items-center justify-center">
@@ -27,14 +29,16 @@ export function EmptyState() {
         </motion.div>
         <div>
           <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
-            No projects yet
+            {isAddingProject ? "Preparing your project" : "No projects yet"}
           </h2>
           <p className="mt-1 max-w-xs text-sm" style={{ color: "var(--text-muted)" }}>
-            Add your first project to start generating AI-ready context files.
+            {isAddingProject
+              ? "Scanning files and generating initial AI-ready context files."
+              : "Add your first project to start generating AI-ready context files."}
           </p>
         </div>
-        <Button onClick={handleAdd} aria-label="Add your first project">
-          Add Project
+        <Button onClick={handleAdd} aria-label="Add your first project" loading={isAddingProject}>
+          {isAddingProject ? "Indexing project..." : "Add Project"}
         </Button>
       </motion.div>
     </main>

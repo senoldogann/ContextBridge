@@ -1,6 +1,6 @@
 #![deny(clippy::all)]
 
-//! ContextBridge — AI-aware project context manager.
+//! Context Bridge — AI-aware project context manager.
 //!
 //! This crate contains the Tauri application logic including database access,
 //! IPC commands, file watching, and context output formatting.
@@ -12,6 +12,7 @@ pub mod errors;
 pub mod output;
 pub mod state;
 
+use crate::db::queries;
 use engine::watcher::WatcherSupervisor;
 use state::AppState;
 use std::fs;
@@ -31,7 +32,7 @@ pub fn run() {
         )
         .init();
 
-    tracing::info!("Starting ContextBridge");
+    tracing::info!("Starting Context Bridge");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -59,12 +60,12 @@ pub fn run() {
             app.manage(AppState::new(storage, watcher));
 
             // Build tray menu
-            let quit = MenuItem::with_id(app, "quit", "Quit ContextBridge", true, None::<&str>)?;
+            let quit = MenuItem::with_id(app, "quit", "Quit Context Bridge", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&quit])?;
 
             TrayIconBuilder::new()
                 .menu(&menu)
-                .tooltip("ContextBridge")
+                .tooltip("Context Bridge")
                 .on_menu_event(|app, event| {
                     if event.id() == "quit" {
                         app.exit(0);
@@ -92,11 +93,54 @@ pub fn run() {
 
             // Show main window on startup
             if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_shadow(true);
                 let _ = window.show();
                 let _ = window.set_focus();
             }
 
-            tracing::info!("ContextBridge ready");
+            // Start watchers for all projects that already exist in the DB.
+            // Without this, file watching only works for projects added *during*
+            // the current session; restarts would silently stop auto-sync.
+            {
+                let (existing_projects, watcher_state) = {
+                    let state = app.state::<AppState>();
+                    let existing_projects = {
+                        let storage = state
+                            .storage
+                            .lock()
+                            .map_err(|_| "storage lock poisoned")?;
+                        match queries::list_projects(&storage.conn) {
+                            Ok(projects) => projects,
+                            Err(error) => {
+                                tracing::warn!(
+                                    error = %error,
+                                    "Failed to load projects while resuming watchers"
+                                );
+                                Vec::new()
+                            }
+                        }
+                    };
+
+                    (existing_projects, state.watcher.clone())
+                };
+
+                if let Ok(mut watcher) = watcher_state.lock() {
+                    for project in existing_projects {
+                        let path = std::path::PathBuf::from(&project.root_path);
+                        if path.is_dir() {
+                            if let Err(e) = watcher.watch_project(project.id.clone(), path) {
+                                tracing::warn!(
+                                    project_id = %project.id,
+                                    error = %e,
+                                    "Failed to resume file watcher for existing project"
+                                );
+                            }
+                        }
+                    }
+                };
+            }
+
+            tracing::info!("Context Bridge ready");
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -106,9 +150,11 @@ pub fn run() {
             commands::projects::get_project_context,
             commands::projects::scan_project,
             commands::projects::refresh_project_context,
+            commands::projects::partial_refresh_project,
             commands::context::search_context,
             commands::context::add_note,
             commands::context::delete_note,
+            commands::context::update_note,
             commands::settings::get_setting,
             commands::settings::set_setting,
             commands::projects::sync_to_tool,

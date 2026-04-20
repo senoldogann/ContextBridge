@@ -1,16 +1,71 @@
-import { useEffect } from "react";
-import { Moon, Sun, Github, BookOpen, Monitor } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Github, BookOpen, Monitor, ChevronDown } from "lucide-react";
+import { getVersion } from "@tauri-apps/api/app";
 import { motion } from "framer-motion";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { Card } from "@/components/ui/Card";
+import { ToolLogo } from "@/components/ui/ToolLogo";
 import { Toggle } from "@/components/ui/Toggle";
+import type { ThemeId } from "@/types";
 
-const THEME_OPTIONS = [
-  { value: "dark", label: "Dark", icon: Moon },
-  { value: "light", label: "Light", icon: Sun },
-] as const;
+interface ThemeOption {
+  value: ThemeId;
+  label: string;
+}
+
+const THEME_OPTIONS: ThemeOption[] = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "system", label: "System" },
+  { value: "zinc", label: "Zinc" },
+  { value: "midnight", label: "Midnight" },
+  { value: "claude", label: "Claude" },
+  { value: "ghostty", label: "Ghostty" },
+];
+
+function ThemePicker({
+  value,
+  onChange,
+}: {
+  value: ThemeId;
+  onChange: (themeId: ThemeId) => void;
+}) {
+  return (
+    <div className="relative min-w-[168px]">
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value as ThemeId)}
+        className="w-full appearance-none rounded-lg px-3 py-2 pr-8 text-sm font-medium"
+        style={{
+          background: "var(--bg-hover)",
+          color: "var(--text-primary)",
+          border: "1px solid var(--border)",
+        }}
+        aria-label="Select theme"
+      >
+        {THEME_OPTIONS.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown
+        size={14}
+        className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2"
+        style={{ color: "var(--text-muted)" }}
+      />
+    </div>
+  );
+}
 
 const ADAPTER_OPTIONS = ["claude", "cursor", "copilot", "codex"] as const;
+
+const ADAPTER_LABELS: Record<(typeof ADAPTER_OPTIONS)[number], string> = {
+  claude: "Claude",
+  cursor: "Cursor",
+  copilot: "Copilot",
+  codex: "Codex",
+};
 
 export function Settings() {
   const theme = useSettingsStore((s) => s.theme);
@@ -18,13 +73,30 @@ export function Settings() {
   const enabledAdapters = useSettingsStore((s) => s.enabledAdapters);
   const loadSettings = useSettingsStore((s) => s.loadSettings);
   const updateSetting = useSettingsStore((s) => s.updateSetting);
+  const [version, setVersion] = useState("");
 
   useEffect(() => {
+    let isMounted = true;
+
     void loadSettings();
+
+    void getVersion()
+      .then((value) => {
+        if (isMounted) {
+          setVersion(value);
+        }
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to load app version", { error });
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [loadSettings]);
 
-  const handleThemeChange = (value: string) => {
-    void updateSetting("theme", value);
+  const handleThemeChange = (themeId: ThemeId) => {
+    void updateSetting("theme", themeId);
   };
 
   const handleAutoSyncToggle = (checked: boolean) => {
@@ -39,17 +111,17 @@ export function Settings() {
   };
 
   return (
-    <main className="theme-transition flex flex-1 flex-col overflow-hidden">
+    <main className="theme-transition flex min-h-0 flex-1 flex-col overflow-hidden">
       <header className="px-6 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
         <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
           Settings
         </h2>
         <p className="mt-0.5 text-xs" style={{ color: "var(--text-muted)" }}>
-          Configure ContextBridge preferences
+          Configure Context Bridge preferences
         </p>
       </header>
 
-      <div className="flex-1 space-y-6 overflow-y-auto p-6">
+      <div className="flex min-h-0 flex-1 flex-col space-y-6 overflow-y-auto p-6">
         {/* Appearance */}
         <motion.section
           initial={{ opacity: 0, y: 8 }}
@@ -60,39 +132,19 @@ export function Settings() {
             Appearance
           </h3>
           <Card>
-            <label className="mb-2 block text-xs" style={{ color: "var(--text-muted)" }}>
-              Theme
-            </label>
-            <div className="flex gap-2">
-              {THEME_OPTIONS.map((opt) => {
-                const Icon = opt.icon;
-                const isActive = theme === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => handleThemeChange(opt.value)}
-                    className="relative flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-150"
-                    style={
-                      isActive
-                        ? {
-                            background: "var(--primary)",
-                            color: "#ffffff",
-                            boxShadow: "0 2px 8px var(--primary-ring)",
-                          }
-                        : {
-                            background: "var(--bg-hover)",
-                            color: "var(--text-muted)",
-                            border: "1px solid var(--border)",
-                          }
-                    }
-                    aria-label={`Set theme to ${opt.label}`}
-                  >
-                    <Icon size={14} />
-                    {opt.label}
-                  </button>
-                );
-              })}
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <label
+                  className="block text-sm font-medium"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  Theme
+                </label>
+                <p className="mt-0.5 text-xs" style={{ color: "var(--text-muted)" }}>
+                  Choose a color palette or follow system preference
+                </p>
+              </div>
+              <ThemePicker value={theme} onChange={handleThemeChange} />
             </div>
           </Card>
         </motion.section>
@@ -116,7 +168,8 @@ export function Settings() {
                   Auto-sync
                 </p>
                 <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                  Automatically sync context when changes are detected
+                  Automatically refresh project context and sync enabled adapters when changes are
+                  detected
                 </p>
               </div>
               <Toggle checked={autoSync} onChange={handleAutoSyncToggle} label="Auto-sync" />
@@ -141,9 +194,14 @@ export function Settings() {
                       checked={enabledAdapters.includes(adapter)}
                       onChange={(e) => handleAdapterToggle(adapter, e.target.checked)}
                       className="h-3.5 w-3.5 rounded accent-emerald-500"
+                      style={{ accentColor: "var(--primary)" }}
                     />
-                    <span className="text-sm capitalize" style={{ color: "var(--text-secondary)" }}>
-                      {adapter}
+                    <span
+                      className="flex items-center gap-2 text-sm"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      <ToolLogo tool={adapter} size={13} />
+                      {ADAPTER_LABELS[adapter]}
                     </span>
                   </label>
                 ))}
@@ -177,10 +235,10 @@ export function Settings() {
               </div>
               <div>
                 <h4 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                  ContextBridge
+                  Context Bridge
                 </h4>
                 <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                  v0.1.0
+                  {version ? `v${version}` : ""}
                 </p>
               </div>
             </div>
@@ -190,7 +248,7 @@ export function Settings() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-all"
-                style={{ color: "var(--text-muted)" }}
+                style={{ background: "transparent", color: "var(--text-muted)" }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLElement).style.background = "var(--bg-hover)";
                   (e.currentTarget as HTMLElement).style.color = "var(--primary)";
@@ -207,7 +265,7 @@ export function Settings() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-all"
-                style={{ color: "var(--text-muted)" }}
+                style={{ background: "transparent", color: "var(--text-muted)" }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLElement).style.background = "var(--bg-hover)";
                   (e.currentTarget as HTMLElement).style.color = "var(--primary)";

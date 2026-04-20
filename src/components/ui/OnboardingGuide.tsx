@@ -18,20 +18,26 @@ interface Step {
 const steps: Step[] = [
   {
     icon: <BridgeIcon className="h-6 w-6" />,
-    title: "Welcome to ContextBridge",
+    title: "Welcome to Context Bridge",
     subtitle: "Your AI context hub",
     description:
-      "ContextBridge keeps all your AI coding tools in sync. Add a project once and every assistant — Claude, Cursor, Copilot, Codex — gets the same rich context automatically.",
+      "Context Bridge keeps all your AI coding tools in sync. Add a project once and every assistant — Claude, Cursor, Copilot, Codex — gets the same rich context automatically.",
     visual: (
       <div className="relative flex h-36 items-center justify-center">
         {/* Center hub */}
         <motion.div
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-          className="relative z-10 flex h-14 w-14 items-center justify-center rounded-2xl shadow-xl ring-1 ring-white/10"
-          style={{ background: "var(--bg-elevated)", boxShadow: "var(--shadow-card)" }}
+          data-testid="onboarding-center-hub"
+          className="relative z-10 flex h-14 w-14 items-center justify-center rounded-2xl shadow-xl"
+          style={{
+            background: "var(--bg-elevated)",
+            boxShadow: "var(--shadow-card)",
+            color: "var(--primary)",
+            border: "1px solid var(--border)",
+          }}
         >
-          <BridgeIcon className="h-7 w-7 text-white" />
+          <BridgeIcon className="h-7 w-7" />
         </motion.div>
 
         {/* Orbiting tool icons */}
@@ -94,7 +100,7 @@ const steps: Step[] = [
     title: "Add Your Project",
     subtitle: "Step 1",
     description:
-      'Click the + button in the sidebar or press the "Add Project" button. Select your project folder. ContextBridge scans your codebase to understand its structure, tech stack, and dependencies.',
+      'Click the + button in the sidebar or press the "Add Project" button. Select your project folder. Context Bridge scans your codebase to understand its structure, tech stack, and dependencies.',
     visual: (
       <div className="flex items-center justify-center">
         <motion.div
@@ -139,7 +145,7 @@ const steps: Step[] = [
     title: "Sync to AI Tools",
     subtitle: "Step 2",
     description:
-      'Open a project and click "Sync All" — ContextBridge writes context files (CLAUDE.md, .cursor/rules, AGENTS.md, .github/copilot-instructions.md) so every tool instantly understands your project.',
+      'Open a project and click "Sync Enabled" — Context Bridge writes context files (CLAUDE.md, .cursor/rules, AGENTS.md, .github/copilot-instructions.md) for the adapters you enabled in Settings, so every tool instantly understands your project.',
     visual: (
       <div className="space-y-2">
         {[
@@ -182,7 +188,7 @@ const steps: Step[] = [
     title: "Work with AI",
     subtitle: "You're ready!",
     description:
-      "Open any AI tool and it already knows your project. Ask complex questions, get contextually accurate suggestions, and never repeat yourself. ContextBridge keeps everything in sync automatically.",
+      "Open any AI tool and it already knows your project. Ask complex questions, get contextually accurate suggestions, and never repeat yourself. Context Bridge keeps everything in sync automatically.",
     visual: (
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
@@ -224,7 +230,7 @@ const steps: Step[] = [
           className="text-center text-[10px]"
           style={{ color: "var(--text-muted)" }}
         >
-          Claude knows your stack because ContextBridge told it ✓
+          Claude knows your stack because Context Bridge told it ✓
         </motion.p>
       </motion.div>
     ),
@@ -266,8 +272,8 @@ export function OnboardingGuide({ onClose }: OnboardingGuideProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-40 flex items-center justify-center p-8"
-      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
+      className="absolute inset-0 z-40 flex items-center justify-center p-8"
+      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", borderRadius: "12px" }}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.92, y: 16 }}

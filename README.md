@@ -16,16 +16,16 @@
 
 ## What is ContextBridge?
 
-ContextBridge is a lightweight **menu-bar desktop app** that watches your project, builds a searchable context database, and **automatically generates** up-to-date configuration files for every AI coding tool you use — Claude (`CLAUDE.md`), GitHub Copilot (`.github/copilot-instructions.md`), Cursor (`.cursorrules`), and Codex (`AGENTS.md`).
+ContextBridge is a lightweight **tray-integrated desktop app** that watches your project, builds a searchable context database, and keeps AI-tool instructions aligned across Claude (`CLAUDE.md`), GitHub Copilot (`.github/copilot-instructions.md`), Cursor (`.cursor/rules/contextbridge.mdc`), and Codex (`AGENTS.md`). Auto-sync writes only the adapters enabled in Settings, and manual per-target sync is still available from the app.
 
 No more manually maintaining four different context files. Change once, sync everywhere.
 
 ## Features
 
-- 🔄 **4-Tool Auto-Sync** — generates and writes configs for Claude, Copilot, Cursor, and Codex simultaneously
+- 🔄 **Settings-Aware Auto-Sync** — watches file changes, refreshes context, and syncs only the adapters enabled in Settings
 - 🔍 **Smart Context Engine** — extracts language, project structure, git metadata, and content hashes
 - 🗄️ **Full-Text Search** — SQLite FTS5 powers instant search across your entire project context
-- 🖥️ **Menu Bar App** — lives in your system tray, always ready, never in the way
+- 🖥️ **Desktop App + Tray Integration** — runs as a native window with quick access from the system tray
 - 🔌 **MCP Server** — exposes context via Model Context Protocol (JSON-RPC 2.0 over stdio)
 - ⚡ **Native Performance** — Rust backend, ~10 MB binary, ~30 MB memory
 - 🔒 **Local First** — all data stays on your machine
@@ -90,7 +90,7 @@ npm run test:e2e
 ContextBridge is a **Tauri v2** app with a Cargo workspace of three crates:
 
 ```
-File Watcher → Context Engine → SQLite (WAL + FTS5) → Output Formatters → AI Config Files
+File Watcher → Frontend Refresh Trigger → Context Engine → SQLite (WAL + FTS5) → Settings-Aware Sync → AI Config Files
 ```
 
 | Crate                | Purpose                            |

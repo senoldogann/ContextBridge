@@ -41,6 +41,7 @@ describe("Dashboard", () => {
       projects: [],
       selectedProject: null,
       isLoading: false,
+      isAddingProject: false,
       error: null,
       contextMap: {},
     });
@@ -116,5 +117,34 @@ describe("Dashboard", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Add your first project" })).toBeInTheDocument();
     });
+  });
+
+  it("shows indexing progress while a project is being added", () => {
+    useProjectStore.setState({
+      projects: fakeProjects,
+      isAddingProject: true,
+      loadProjects: vi.fn().mockResolvedValue(undefined),
+    });
+
+    render(<Dashboard />);
+
+    expect(screen.getByText("Indexing project...")).toBeInTheDocument();
+    expect(screen.getByText("Scanning files and preparing context outputs")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add new project" })).toBeDisabled();
+  });
+
+  it("applies the same height rules to project cards and the add-project card", () => {
+    useProjectStore.setState({
+      projects: fakeProjects,
+      loadProjects: vi.fn().mockResolvedValue(undefined),
+    });
+
+    render(<Dashboard />);
+
+    const projectCard = screen.getByText("Alpha").closest("button");
+    const addCard = screen.getByRole("button", { name: "Add new project" });
+
+    expect(projectCard).toHaveClass("h-full", "min-h-[132px]");
+    expect(addCard).toHaveClass("h-full", "min-h-[132px]");
   });
 });

@@ -1,6 +1,9 @@
 //! Copilot-format output (`.github/copilot-instructions.md`).
 
-use crate::output::group_notes_by_category;
+use crate::output::{
+    collect_boundary_hints, collect_important_paths, collect_workspace_manifests,
+    display_workspace_dir, generate_build_commands_for_project, group_notes_by_category,
+};
 use contextbridge_core::{AppError, ContextFormatter, ProjectContext};
 use std::fmt::Write;
 use std::path::PathBuf;
@@ -29,6 +32,15 @@ impl ContextFormatter for CopilotFormatter {
         // Tech Stack
         write_tech_stack(&mut out, ctx)?;
 
+        // Preferred Commands
+        write_preferred_commands(&mut out, ctx)?;
+
+        // Workspace Map
+        write_workspace_map(&mut out, ctx)?;
+
+        // Important Paths
+        write_important_paths(&mut out, ctx)?;
+
         let groups = group_notes_by_category(&ctx.notes);
 
         // Coding Style
@@ -41,10 +53,10 @@ impl ContextFormatter for CopilotFormatter {
         }
 
         // What Copilot Should Do
-        write_should_do(&mut out, &groups)?;
+        write_should_do(&mut out, ctx, &groups)?;
 
         // What Copilot Should Avoid
-        write_should_avoid(&mut out, &groups)?;
+        write_should_avoid(&mut out, ctx, &groups)?;
 
         crate::output::check_output_limit(&mut out);
         Ok(out)
@@ -96,9 +108,60 @@ fn write_tech_stack(out: &mut String, ctx: &ProjectContext) -> Result<(), AppErr
     Ok(())
 }
 
+fn write_preferred_commands(out: &mut String, ctx: &ProjectContext) -> Result<(), AppError> {
+    let commands = generate_build_commands_for_project(&ctx.project.root_path, &ctx.tech_stack);
+    if commands.is_empty() {
+        return Ok(());
+    }
+
+    writeln!(out, "## Preferred Commands\n")?;
+    writeln!(out, "```bash")?;
+    for (label, command) in commands {
+        writeln!(out, "# {label}")?;
+        writeln!(out, "{command}")?;
+    }
+    writeln!(out, "```\n")?;
+    Ok(())
+}
+
+fn write_workspace_map(out: &mut String, ctx: &ProjectContext) -> Result<(), AppError> {
+    let workspaces = collect_workspace_manifests(&ctx.project.root_path);
+    if workspaces.is_empty() {
+        return Ok(());
+    }
+
+    writeln!(out, "## Workspace Map\n")?;
+    for workspace in workspaces {
+        let location = display_workspace_dir(&workspace.relative_dir);
+        let manifest = workspace
+            .package_name
+            .as_ref()
+            .map(|value| format!("{} ({value})", workspace.manifest_name))
+            .unwrap_or_else(|| workspace.manifest_name.clone());
+        writeln!(out, "- **{location}** — {manifest}")?;
+    }
+    writeln!(out)?;
+    Ok(())
+}
+
+fn write_important_paths(out: &mut String, ctx: &ProjectContext) -> Result<(), AppError> {
+    let important_paths = collect_important_paths(&ctx.project.root_path, &ctx.tech_stack);
+    if important_paths.is_empty() {
+        return Ok(());
+    }
+
+    writeln!(out, "## Important Paths\n")?;
+    for entry in important_paths {
+        writeln!(out, "- `{}` — {}", entry.path, entry.purpose)?;
+    }
+    writeln!(out)?;
+    Ok(())
+}
+
 /// Write the "What Copilot Should Do" section.
 fn write_should_do(
     out: &mut String,
+    ctx: &ProjectContext,
     groups: &std::collections::BTreeMap<&str, Vec<&contextbridge_core::ContextNote>>,
 ) -> Result<(), AppError> {
     writeln!(out, "## What Copilot Should Do\n")?;
@@ -107,6 +170,17 @@ fn write_should_do(
         "- Follow the project's established patterns and conventions"
     )?;
     writeln!(out, "- Use the correct versions of libraries listed above")?;
+
+    if collect_workspace_manifests(&ctx.project.root_path).len() > 1 {
+        writeln!(
+            out,
+            "- Start from the closest workspace manifest before changing code, scripts, or dependencies"
+        )?;
+    }
+
+    for hint in collect_boundary_hints(&ctx.project.root_path, &ctx.tech_stack) {
+        writeln!(out, "- {hint}")?;
+    }
 
     if let Some(notes) = groups.get("guidelines") {
         for note in notes {
@@ -120,11 +194,19 @@ fn write_should_do(
 /// Write the "What Copilot Should Avoid" section.
 fn write_should_avoid(
     out: &mut String,
+    ctx: &ProjectContext,
     groups: &std::collections::BTreeMap<&str, Vec<&contextbridge_core::ContextNote>>,
 ) -> Result<(), AppError> {
     writeln!(out, "## What Copilot Should Avoid\n")?;
     writeln!(out, "- Don't suggest deprecated patterns")?;
     writeln!(out, "- Don't add dependencies not already in the project")?;
+
+    if collect_workspace_manifests(&ctx.project.root_path).len() > 1 {
+        writeln!(
+            out,
+            "- Don't mix unrelated workspaces in one change unless the task clearly spans them"
+        )?;
+    }
 
     for cat in &["avoid", "antipattern"] {
         if let Some(notes) = groups.get(cat) {

@@ -82,6 +82,91 @@ fn test_scan_node_project() {
 }
 
 #[test]
+fn test_scan_infers_typescript_from_source_files() {
+    let dir = TempDir::new().unwrap();
+    fs::write(
+        dir.path().join("package.json"),
+        r#"{
+        "name": "workspace-app",
+        "private": true,
+        "engines": {
+            "node": ">=20.0.0"
+        }
+    }"#,
+    )
+    .unwrap();
+    fs::create_dir_all(dir.path().join("packages/shared/src")).unwrap();
+    fs::write(
+        dir.path().join("packages/shared/src/index.ts"),
+        "export const version = '1.0.0';",
+    )
+    .unwrap();
+
+    let result = contextbridge_lib::engine::project_scanner::scan_project(dir.path()).unwrap();
+
+    let names: Vec<&str> = result.tech_stack.iter().map(|t| t.name.as_str()).collect();
+    assert!(names.contains(&"Node.js"), "Expected Node.js in {names:?}");
+    assert!(
+        names.contains(&"TypeScript"),
+        "Expected TypeScript in {names:?}"
+    );
+}
+
+#[test]
+fn test_scan_detects_nested_monorepo_frameworks() {
+    let dir = TempDir::new().unwrap();
+    fs::write(
+        dir.path().join("package.json"),
+        r#"{
+        "name": "workspace-app",
+        "private": true,
+        "engines": {
+            "node": ">=20.0.0",
+            "pnpm": ">=9.0.0"
+        }
+    }"#,
+    )
+    .unwrap();
+    fs::write(
+        dir.path().join("pnpm-workspace.yaml"),
+        "packages:\n  - \"apps/*\"\n  - \"packages/*\"\n",
+    )
+    .unwrap();
+    fs::create_dir_all(dir.path().join("apps/mobile")).unwrap();
+    fs::write(
+        dir.path().join("apps/mobile/package.json"),
+        r#"{
+        "name": "@workspace/mobile",
+        "dependencies": {
+            "expo": "~52.0.0",
+            "react": "18.3.1",
+            "react-native": "0.76.7"
+        },
+        "devDependencies": {
+            "typescript": "~5.6.0"
+        }
+    }"#,
+    )
+    .unwrap();
+
+    let result = contextbridge_lib::engine::project_scanner::scan_project(dir.path()).unwrap();
+
+    let names: Vec<&str> = result.tech_stack.iter().map(|t| t.name.as_str()).collect();
+    assert!(names.contains(&"Node.js"), "Expected Node.js in {names:?}");
+    assert!(names.contains(&"pnpm"), "Expected pnpm in {names:?}");
+    assert!(
+        names.contains(&"TypeScript"),
+        "Expected TypeScript in {names:?}"
+    );
+    assert!(names.contains(&"React"), "Expected React in {names:?}");
+    assert!(names.contains(&"Expo"), "Expected Expo in {names:?}");
+    assert!(
+        names.contains(&"React Native"),
+        "Expected React Native in {names:?}"
+    );
+}
+
+#[test]
 fn test_scan_ignores_node_modules() {
     let dir = TempDir::new().unwrap();
     fs::write(dir.path().join("package.json"), r#"{"name":"test"}"#).unwrap();

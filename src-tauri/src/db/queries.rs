@@ -41,10 +41,10 @@ pub fn get_project(conn: &Connection, id: &str) -> Result<Project, AppError> {
     })
 }
 
-/// List all projects.
+/// List all projects ordered by most recently updated first.
 pub fn list_projects(conn: &Connection) -> Result<Vec<Project>, AppError> {
     let mut stmt = conn.prepare(
-        "SELECT id, name, root_path, created_at, updated_at FROM projects ORDER BY name",
+        "SELECT id, name, root_path, created_at, updated_at FROM projects ORDER BY updated_at DESC",
     )?;
     let rows = stmt.query_map([], |row| {
         Ok(Project {
@@ -283,7 +283,7 @@ fn map_context_note(row: &rusqlite::Row) -> rusqlite::Result<ContextNote> {
 // Recent changes
 // ---------------------------------------------------------------------------
 
-/// Insert a recent change record.
+/// Insert a recent change record, then trim to the 200 most recent per project.
 pub fn insert_recent_change(conn: &Connection, change: &RecentChange) -> Result<(), AppError> {
     conn.execute(
         "INSERT INTO recent_changes (project_id, change_type, summary, files, author, timestamp, commit_hash)
@@ -298,6 +298,20 @@ pub fn insert_recent_change(conn: &Connection, change: &RecentChange) -> Result<
             change.commit_hash,
         ],
     )?;
+
+    // Keep only the 200 most recent changes per project to prevent unbounded growth.
+    conn.execute(
+        "DELETE FROM recent_changes
+         WHERE project_id = ?1
+           AND id NOT IN (
+             SELECT id FROM recent_changes
+             WHERE project_id = ?1
+             ORDER BY timestamp DESC
+             LIMIT 200
+           )",
+        params![change.project_id],
+    )?;
+
     Ok(())
 }
 
@@ -339,7 +353,7 @@ pub fn list_recent_changes(
 pub fn upsert_sync_state(conn: &Connection, state: &SyncState) -> Result<(), AppError> {
     conn.execute(
         "INSERT INTO sync_state (project_id, target, output_path, content_hash, synced_at)
-         VALUES (?1, ?2, ?3, ?4, datetime('now'))
+                 VALUES (?1, ?2, ?3, ?4, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
          ON CONFLICT(project_id, target) DO UPDATE SET
            output_path = excluded.output_path,
            content_hash = excluded.content_hash,
@@ -402,7 +416,8 @@ pub fn get_setting(conn: &Connection, key: &str) -> Result<Option<String>, AppEr
     }
 }
 
-/// Set a setting value (insert or update).
+/// Set a setting value (insert or update). Also touches `projects.updated_at`
+/// when the key is project-scoped — currently a global key-value store.
 pub fn set_setting(conn: &Connection, key: &str, value: &str) -> Result<(), AppError> {
     conn.execute(
         "INSERT INTO settings (key, value) VALUES (?1, ?2)

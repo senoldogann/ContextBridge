@@ -77,3 +77,30 @@ export async function addNote(
 export async function deleteNote(projectId: string, noteId: string): Promise<void> {
   return invoke<undefined>("delete_note", { projectId, noteId });
 }
+
+/** Update an existing context note. */
+export async function updateNote(
+  projectId: string,
+  noteId: string,
+  category: string,
+  title: string,
+  content: string,
+  priority: number,
+): Promise<ContextNote> {
+  return invoke<ContextNote>("update_note", {
+    projectId,
+    noteId,
+    category,
+    title,
+    content,
+    priority,
+  });
+}
+
+/** Partially refresh project context for specific changed file paths. */
+export async function partialRefreshProject(
+  projectId: string,
+  changedPaths: string[],
+): Promise<void> {
+  return invoke<undefined>("partial_refresh_project", { projectId, changedPaths });
+}

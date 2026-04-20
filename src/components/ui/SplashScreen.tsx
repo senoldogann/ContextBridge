@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { getVersion } from "@tauri-apps/api/app";
 import { motion, AnimatePresence } from "framer-motion";
 import { BridgeIcon } from "@/components/ui/BridgeIcon";
 
@@ -16,27 +17,63 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
   const [progress, setProgress] = useState(0);
   const [taglineIndex] = useState(() => Math.floor(Math.random() * TAGLINES.length));
   const [visible, setVisible] = useState(true);
+  const [version, setVersion] = useState("");
+  const onCompleteRef = useRef(onComplete);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void getVersion()
+      .then((value) => {
+        if (isMounted) {
+          setVersion(value);
+        }
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to load app version", { error });
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
     const duration = 2200;
     const steps = 60;
     const interval = duration / steps;
     let step = 0;
+    let hideTimerId: number | undefined;
+    let completeTimerId: number | undefined;
 
-    const timer = setInterval(() => {
+    const progressTimerId = window.setInterval(() => {
       step++;
       setProgress(Math.min((step / steps) * 100, 100));
       if (step >= steps) {
-        clearInterval(timer);
-        setTimeout(() => {
+        window.clearInterval(progressTimerId);
+        hideTimerId = window.setTimeout(() => {
           setVisible(false);
-          setTimeout(onComplete, 500);
+          completeTimerId = window.setTimeout(() => {
+            onCompleteRef.current();
+          }, 500);
         }, 200);
       }
     }, interval);
 
-    return () => clearInterval(timer);
-  }, [onComplete]);
+    return () => {
+      window.clearInterval(progressTimerId);
+      if (hideTimerId !== undefined) {
+        window.clearTimeout(hideTimerId);
+      }
+      if (completeTimerId !== undefined) {
+        window.clearTimeout(completeTimerId);
+      }
+    };
+  }, []);
 
   return (
     <AnimatePresence>
@@ -46,8 +83,8 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden"
-          style={{ background: "var(--bg-base)" }}
+          className="absolute inset-0 z-50 flex flex-col items-center justify-center overflow-hidden"
+          style={{ background: "var(--bg-base)", borderRadius: "12px" }}
         >
           {/* Ambient glow blobs */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
@@ -77,12 +114,20 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
               className="animate-float"
             >
               <div
-                className="relative flex h-24 w-24 items-center justify-center rounded-3xl shadow-2xl ring-1 ring-white/10"
-                style={{ background: "var(--bg-elevated)", boxShadow: "var(--shadow-hover)" }}
+                className="relative flex h-24 w-24 items-center justify-center rounded-3xl shadow-2xl"
+                style={{
+                  background: "var(--bg-elevated)",
+                  boxShadow: "var(--shadow-hover)",
+                  border: "1px solid var(--border)",
+                }}
               >
-                <BridgeIcon className="h-12 w-12 text-white" />
-                {/* Inner glow */}
-                <div className="absolute inset-0 rounded-3xl bg-white/5" />
+                <div className="relative z-10" style={{ color: "var(--text-primary)" }}>
+                  <BridgeIcon className="h-12 w-12" />
+                </div>
+                <div
+                  className="absolute inset-0 rounded-3xl"
+                  style={{ background: "var(--primary-muted)" }}
+                />
               </div>
             </motion.div>
 
@@ -97,7 +142,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
                 className="text-4xl font-bold tracking-tight"
                 style={{ color: "var(--text-primary)" }}
               >
-                ContextBridge
+                Context Bridge
               </h1>
               <motion.p
                 initial={{ opacity: 0 }}
@@ -153,7 +198,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
               className="absolute -bottom-12 text-[10px] tracking-widest uppercase"
               style={{ color: "var(--text-muted)", opacity: 0.5 }}
             >
-              v0.1.0
+              {version ? `v${version}` : ""}
             </motion.span>
           </div>
         </motion.div>

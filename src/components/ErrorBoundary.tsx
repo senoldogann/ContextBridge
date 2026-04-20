@@ -17,15 +17,26 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.error) {
       return (
-        <div className="flex flex-1 items-center justify-center bg-zinc-950 p-8">
+        <div
+          className="flex flex-1 items-center justify-center p-8"
+          style={{ background: "var(--bg-base)" }}
+        >
           <div className="text-center">
-            <h2 className="text-lg font-semibold text-red-400">Something went wrong</h2>
-            <p className="mt-2 text-sm text-zinc-400">{this.state.error.message}</p>
+            <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+              Something went wrong
+            </h2>
+            <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
+              {this.state.error.message}
+            </p>
             <button
               type="button"
               onClick={() => this.setState({ error: null })}
-              className="mt-4 rounded-md px-4 py-2 text-sm text-white"
-              style={{ background: "var(--primary)", cursor: "pointer" }}
+              className="mt-4 rounded-md px-4 py-2 text-sm"
+              style={{
+                background: "var(--primary)",
+                color: "var(--bg-base)",
+                cursor: "pointer",
+              }}
               onMouseOver={(e) => {
                 e.currentTarget.style.background = "var(--primary-hover)";
               }}

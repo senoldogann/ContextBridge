@@ -1,6 +1,9 @@
 //! Claude-format output (CLAUDE.md).
 
-use crate::output::{generate_build_commands, group_notes_by_category};
+use crate::output::{
+    collect_important_paths, collect_workspace_manifests, display_workspace_dir,
+    generate_build_commands_for_project, group_notes_by_category,
+};
 use contextbridge_core::{AppError, ContextFormatter, ProjectContext};
 use std::fmt::Write;
 use std::path::PathBuf;
@@ -39,6 +42,12 @@ impl ContextFormatter for ClaudeFormatter {
 
         // Build & Run
         write_build_run(&mut out, ctx, &groups)?;
+
+        // Workspace Map
+        write_workspace_map(&mut out, ctx)?;
+
+        // Important Paths
+        write_important_paths(&mut out, ctx)?;
 
         // Coding Conventions
         write_notes_section(&mut out, &groups, &["conventions"], "Coding Conventions")?;
@@ -114,7 +123,7 @@ fn write_build_run(
         .flatten()
         .collect();
 
-    let auto_cmds = generate_build_commands(&ctx.tech_stack);
+    let auto_cmds = generate_build_commands_for_project(&ctx.project.root_path, &ctx.tech_stack);
 
     if build_notes.is_empty() && auto_cmds.is_empty() {
         return Ok(());
@@ -139,6 +148,50 @@ fn write_build_run(
         writeln!(out, "```\n")?;
     }
 
+    Ok(())
+}
+
+fn write_workspace_map(out: &mut String, ctx: &ProjectContext) -> Result<(), AppError> {
+    let workspaces = collect_workspace_manifests(&ctx.project.root_path);
+    if workspaces.is_empty() {
+        return Ok(());
+    }
+
+    writeln!(out, "## Workspace Map\n")?;
+    for workspace in workspaces {
+        let location = display_workspace_dir(&workspace.relative_dir);
+        let package_name = workspace
+            .package_name
+            .as_ref()
+            .map(|value| format!(" ({value})"))
+            .unwrap_or_default();
+        let scripts = if workspace.notable_scripts.is_empty() {
+            String::new()
+        } else {
+            format!(" — scripts: {}", workspace.notable_scripts.join(", "))
+        };
+
+        writeln!(
+            out,
+            "- `{location}` — {}{}{scripts}",
+            workspace.manifest_name, package_name
+        )?;
+    }
+    writeln!(out)?;
+    Ok(())
+}
+
+fn write_important_paths(out: &mut String, ctx: &ProjectContext) -> Result<(), AppError> {
+    let important_paths = collect_important_paths(&ctx.project.root_path, &ctx.tech_stack);
+    if important_paths.is_empty() {
+        return Ok(());
+    }
+
+    writeln!(out, "## Important Paths\n")?;
+    for entry in important_paths {
+        writeln!(out, "- `{}` — {}", entry.path, entry.purpose)?;
+    }
+    writeln!(out)?;
     Ok(())
 }
 

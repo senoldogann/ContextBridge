@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Settings } from "@/pages/Settings";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -8,11 +8,35 @@ vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
 }));
 
+vi.mock("@tauri-apps/api/app", () => ({
+  getVersion: vi.fn().mockResolvedValue("0.1.0"),
+}));
+
 const mockedInvoke = vi.mocked(invoke);
+
+const localStorageMock = {
+  getItem: vi.fn(),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  clear: vi.fn(),
+  key: vi.fn(),
+  length: 0,
+};
+
+async function renderSettings() {
+  const result = render(<Settings />);
+
+  await act(async () => {
+    await Promise.resolve();
+  });
+
+  return result;
+}
 
 describe("Settings", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal("localStorage", localStorageMock);
     useSettingsStore.setState({
       theme: "dark",
       autoSync: true,
@@ -23,26 +47,27 @@ describe("Settings", () => {
   });
 
   it("renders the Settings heading", async () => {
-    render(<Settings />);
+    await renderSettings();
     expect(screen.getByText("Settings")).toBeInTheDocument();
   });
 
-  it("renders theme options (Dark and Light)", async () => {
-    render(<Settings />);
-    expect(screen.getByLabelText("Set theme to Dark")).toBeInTheDocument();
-    expect(screen.getByLabelText("Set theme to Light")).toBeInTheDocument();
+  it("renders theme picker with current selection", async () => {
+    await renderSettings();
+    const select = screen.getByLabelText("Select theme");
+    expect(select).toBeInTheDocument();
+    expect(select).toHaveValue("dark");
   });
 
   it("renders adapter checkboxes", async () => {
-    render(<Settings />);
-    expect(screen.getByText("claude")).toBeInTheDocument();
-    expect(screen.getByText("cursor")).toBeInTheDocument();
-    expect(screen.getByText("copilot")).toBeInTheDocument();
-    expect(screen.getByText("codex")).toBeInTheDocument();
+    await renderSettings();
+    expect(screen.getByRole("checkbox", { name: /Claude/ })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: /Cursor/ })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: /Copilot/ })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: /Codex/ })).toBeInTheDocument();
   });
 
   it("adapter checkboxes are checked for enabled adapters", async () => {
-    render(<Settings />);
+    await renderSettings();
     const checkboxes = screen.getAllByRole("checkbox");
     expect(checkboxes).toHaveLength(4);
     checkboxes.forEach((cb) => {
@@ -51,15 +76,16 @@ describe("Settings", () => {
   });
 
   it("renders auto-sync toggle", async () => {
-    render(<Settings />);
+    await renderSettings();
     const toggle = screen.getByRole("switch", { name: "Auto-sync" });
     expect(toggle).toBeInTheDocument();
     expect(toggle).toHaveAttribute("aria-checked", "true");
   });
 
-  it("clicking theme button calls updateSetting", async () => {
-    render(<Settings />);
-    fireEvent.click(screen.getByLabelText("Set theme to Light"));
+  it("selecting a theme from dropdown calls updateSetting", async () => {
+    await renderSettings();
+    const themeSelect = screen.getByLabelText("Select theme");
+    fireEvent.change(themeSelect, { target: { value: "light" } });
 
     await waitFor(() => {
       expect(mockedInvoke).toHaveBeenCalledWith("set_setting", {
@@ -70,7 +96,7 @@ describe("Settings", () => {
   });
 
   it("toggling auto-sync calls updateSetting", async () => {
-    render(<Settings />);
+    await renderSettings();
     const toggle = screen.getByRole("switch", { name: "Auto-sync" });
     fireEvent.click(toggle);
 
@@ -83,7 +109,7 @@ describe("Settings", () => {
   });
 
   it("unchecking an adapter calls updateSetting with updated list", async () => {
-    render(<Settings />);
+    await renderSettings();
     const checkboxes = screen.getAllByRole("checkbox");
     const firstCheckbox = checkboxes[0];
     if (!firstCheckbox) throw new Error("No checkbox found");
@@ -98,8 +124,8 @@ describe("Settings", () => {
   });
 
   it("renders About section with version", async () => {
-    render(<Settings />);
-    expect(screen.getByText("v0.1.0")).toBeInTheDocument();
-    expect(screen.getByText("ContextBridge")).toBeInTheDocument();
+    await renderSettings();
+    expect(await screen.findByText("v0.1.0")).toBeInTheDocument();
+    expect(screen.getByText("Context Bridge")).toBeInTheDocument();
   });
 });

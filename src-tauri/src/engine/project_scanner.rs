@@ -4,7 +4,7 @@
 //! Uses `walkdir` for recursive traversal, `serde_json` for `package.json` parsing,
 //! and `sha2` for content hashing.
 
-use std::collections::HashSet;
+use std::collections::{BTreeSet, HashSet};
 use std::fs;
 use std::path::Path;
 
@@ -146,7 +146,8 @@ pub fn scan_project(root_path: &Path) -> Result<ScanResult, AppError> {
     tracing::info!("Discovered {total_files} files ({total_size} bytes)");
 
     // Detect tech stack
-    let tech_stack = detect_tech_stack(&root)?;
+    let mut tech_stack = detect_tech_stack(&root)?;
+    infer_languages_from_source_files(&files, &mut tech_stack);
     tracing::info!("Detected {} tech stack entries", tech_stack.len());
 
     Ok(ScanResult {
@@ -437,6 +438,20 @@ fn detect_tech_stack(root: &Path) -> Result<Vec<TechEntry>, AppError> {
     {
         let mut add =
             |category: &str, name: &str, version: Option<String>, confidence: f64, source: &str| {
+                if let Some(existing) = entries
+                    .iter_mut()
+                    .find(|entry| entry.category == category && entry.name == name)
+                {
+                    if existing.version.is_none() && version.is_some() {
+                        existing.version = version;
+                    }
+                    if confidence >= existing.confidence {
+                        existing.confidence = confidence;
+                        existing.source = source.into();
+                    }
+                    return;
+                }
+
                 entries.push(TechEntry {
                     id: 0,
                     project_id: String::new(),
@@ -448,58 +463,98 @@ fn detect_tech_stack(root: &Path) -> Result<Vec<TechEntry>, AppError> {
                 });
             };
 
-        // ── package.json ──────────────────────────────────────────────────
-        let pkg_path = root.join("package.json");
-        if pkg_path.is_file() {
-            if let Ok(raw) = fs::read_to_string(&pkg_path) {
-                if let Ok(pkg) = serde_json::from_str::<serde_json::Value>(&raw) {
-                    // Node.js runtime
-                    let node_ver = pkg
-                        .pointer("/engines/node")
+        // ── package.json files ────────────────────────────────────────────
+        let ignored: HashSet<&str> = super::IGNORED_DIRS.iter().copied().collect();
+        let allowed_hidden: HashSet<&str> = HIDDEN_ALLOWLIST.iter().copied().collect();
+        let package_json_paths: Vec<String> = WalkDir::new(root)
+            .follow_links(false)
+            .max_depth(MAX_DEPTH)
+            .into_iter()
+            .filter_entry(|entry| should_visit(entry, &ignored, &allowed_hidden))
+            .filter_map(Result::ok)
+            .filter(|entry| entry.file_type().is_file() && entry.file_name() == "package.json")
+            .filter_map(|entry| {
+                entry
+                    .path()
+                    .strip_prefix(root)
+                    .ok()
+                    .map(|rel| rel.to_string_lossy().to_string())
+            })
+            .collect();
+
+        let has_pnpm_workspace = root.join("pnpm-workspace.yaml").is_file();
+
+        for package_json_path in package_json_paths {
+            let pkg_path = root.join(&package_json_path);
+            let Ok(raw) = fs::read_to_string(&pkg_path) else {
+                tracing::debug!(path = %package_json_path, "Failed to read package.json");
+                continue;
+            };
+
+            let Ok(pkg) = serde_json::from_str::<serde_json::Value>(&raw) else {
+                tracing::debug!(path = %package_json_path, "Failed to parse package.json");
+                continue;
+            };
+
+            let deps = pkg.get("dependencies");
+            let dev_deps = pkg.get("devDependencies");
+
+            let node_ver = pkg
+                .pointer("/engines/node")
+                .and_then(|v| v.as_str())
+                .map(String::from);
+            add("runtime", "Node.js", node_ver, 0.95, &package_json_path);
+
+            let pnpm_ver = pkg
+                .pointer("/engines/pnpm")
+                .and_then(|v| v.as_str())
+                .map(String::from)
+                .or_else(|| {
+                    pkg.get("packageManager")
                         .and_then(|v| v.as_str())
-                        .map(String::from);
-                    add("runtime", "Node.js", node_ver, 0.95, "package.json");
+                        .and_then(|v| v.strip_prefix("pnpm@"))
+                        .map(String::from)
+                });
+            if pnpm_ver.is_some() || has_pnpm_workspace {
+                add("tooling", "pnpm", pnpm_ver, 0.92, &package_json_path);
+            }
 
-                    // TypeScript from devDependencies
-                    if let Some(ts_ver) = pkg
-                        .pointer("/devDependencies/typescript")
-                        .and_then(|v| v.as_str())
-                    {
-                        add(
-                            "language",
-                            "TypeScript",
-                            Some(ts_ver.into()),
-                            0.95,
-                            "package.json",
-                        );
-                    }
+            let type_script_ver = deps
+                .and_then(|d| d.get("typescript"))
+                .or_else(|| dev_deps.and_then(|d| d.get("typescript")))
+                .and_then(|v| v.as_str())
+                .map(String::from);
+            if type_script_ver.is_some() {
+                add(
+                    "language",
+                    "TypeScript",
+                    type_script_ver,
+                    0.95,
+                    &package_json_path,
+                );
+            }
 
-                    // Framework detection from dependencies + devDependencies
-                    let framework_checks: &[(&str, &str)] = &[
-                        ("next", "Next.js"),
-                        ("nuxt", "Nuxt"),
-                        ("remix", "Remix"),
-                        ("react", "React"),
-                        ("vue", "Vue"),
-                        ("@angular/core", "Angular"),
-                        ("svelte", "Svelte"),
-                    ];
+            let framework_checks: &[(&str, &str)] = &[
+                ("next", "Next.js"),
+                ("nuxt", "Nuxt"),
+                ("remix", "Remix"),
+                ("react", "React"),
+                ("expo", "Expo"),
+                ("react-native", "React Native"),
+                ("expo-router", "Expo Router"),
+                ("vue", "Vue"),
+                ("@angular/core", "Angular"),
+                ("svelte", "Svelte"),
+            ];
 
-                    let deps = pkg.get("dependencies");
-                    let dev_deps = pkg.get("devDependencies");
-
-                    for &(key, name) in framework_checks {
-                        let version = deps
-                            .and_then(|d| d.get(key))
-                            .or_else(|| dev_deps.and_then(|d| d.get(key)))
-                            .and_then(|v| v.as_str())
-                            .map(String::from);
-                        if version.is_some() {
-                            add("framework", name, version, 0.9, "package.json");
-                        }
-                    }
-                } else {
-                    tracing::debug!("Failed to parse package.json");
+            for &(key, name) in framework_checks {
+                let version = deps
+                    .and_then(|d| d.get(key))
+                    .or_else(|| dev_deps.and_then(|d| d.get(key)))
+                    .and_then(|v| v.as_str())
+                    .map(String::from);
+                if version.is_some() {
+                    add("framework", name, version, 0.9, &package_json_path);
                 }
             }
         }
@@ -746,6 +801,30 @@ fn detect_tech_stack(root: &Path) -> Result<Vec<TechEntry>, AppError> {
     }
 
     Ok(entries)
+}
+
+fn infer_languages_from_source_files(files: &[ScannedFile], entries: &mut Vec<TechEntry>) {
+    let inferred_languages: BTreeSet<&str> = files
+        .iter()
+        .filter(|file| file.file_type == "source")
+        .filter_map(|file| file.language.as_deref())
+        .collect();
+
+    for language in inferred_languages {
+        if entries.iter().any(|entry| entry.name == language) {
+            continue;
+        }
+
+        entries.push(TechEntry {
+            id: 0,
+            project_id: String::new(),
+            category: "language".into(),
+            name: language.into(),
+            version: None,
+            confidence: 0.7,
+            source: "source files".into(),
+        });
+    }
 }
 
 /// Check if any file in `root` starts with the given `prefix`.

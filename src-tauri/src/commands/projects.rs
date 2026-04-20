@@ -2,6 +2,7 @@
 
 use crate::db::{models::Project, queries};
 use crate::engine::context_engine::{self, RefreshOptions};
+use crate::engine::sync;
 use crate::errors::AppError;
 use crate::state::AppState;
 use contextbridge_core::ProjectContext;
@@ -71,6 +72,8 @@ pub fn add_project(
             context_engine::refresh_context(&storage, &project.id, &RefreshOptions::default())
         {
             tracing::warn!(project_id = %project.id, error = %e, "Auto-scan failed after adding project");
+        } else if let Err(e) = sync::sync_after_refresh(&storage, &project.id) {
+            tracing::warn!(project_id = %project.id, error = %e, "Auto-sync failed after adding project");
         }
     } // storage lock released
 
@@ -122,7 +125,13 @@ pub fn scan_project(
         .storage
         .lock()
         .map_err(|_| AppError::Internal("State unavailable".into()))?;
-    context_engine::refresh_context(&storage, &project_id, &RefreshOptions::default())
+    let result =
+        context_engine::refresh_context(&storage, &project_id, &RefreshOptions::default())?;
+    if let Err(error) = sync::sync_after_refresh(&storage, &project_id) {
+        tracing::warn!(project_id = %project_id, error = %error, "Auto-sync failed after refresh");
+    }
+
+    Ok(result)
 }
 
 /// Refresh project context (delegates to scan_project).
@@ -158,5 +167,30 @@ pub fn sync_all_tools(
         .storage
         .lock()
         .map_err(|_| AppError::Internal("State unavailable".into()))?;
-    crate::engine::sync::sync_all(&storage, &project_id)
+    sync::sync_all(&storage, &project_id)
+}
+
+/// Partially refresh project context for a set of changed file paths.
+///
+/// More efficient than a full rescan — only re-processes the files that
+/// actually changed. Triggers auto-sync if enabled.
+#[tauri::command]
+pub fn partial_refresh_project(
+    state: State<'_, AppState>,
+    project_id: String,
+    changed_paths: Vec<String>,
+) -> Result<(), AppError> {
+    let storage = state
+        .storage
+        .lock()
+        .map_err(|_| AppError::Internal("State unavailable".into()))?;
+    context_engine::partial_refresh(&storage, &project_id, &changed_paths)?;
+    if let Err(error) = sync::sync_after_refresh(&storage, &project_id) {
+        tracing::warn!(
+            project_id = %project_id,
+            error = %error,
+            "Auto-sync failed after partial refresh"
+        );
+    }
+    Ok(())
 }

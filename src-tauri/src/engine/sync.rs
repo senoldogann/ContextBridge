@@ -5,6 +5,7 @@ use std::path::Path;
 use sha2::{Digest, Sha256};
 
 use contextbridge_core::{ContextFormatter, ProjectContext, SyncState};
+use serde_json::Value;
 
 use crate::db::{queries, StorageManager};
 use crate::errors::AppError;
@@ -15,6 +16,9 @@ use crate::output::{
 
 /// Supported sync targets.
 pub const VALID_TARGETS: &[&str] = &["claude", "cursor", "copilot", "codex"];
+
+const AUTO_SYNC_SETTING_KEY: &str = "auto_sync";
+const ENABLED_ADAPTERS_SETTING_KEY: &str = "enabled_adapters";
 
 /// Result of a sync operation.
 #[derive(Debug, Clone, serde::Serialize)]
@@ -64,18 +68,6 @@ fn sync_to_tool_with_context(
     // Compute content hash
     let hash = compute_hash(&content);
 
-    // Check if content changed since last sync
-    if let Some(existing) = queries::get_sync_state(&storage.conn, project_id, target)? {
-        if existing.content_hash == hash {
-            return Ok(SyncResult {
-                target: target.to_string(),
-                output_path: existing.output_path,
-                written: false,
-                content_hash: hash,
-            });
-        }
-    }
-
     // Resolve output path (project_root / output_dir / filename)
     let project_root = Path::new(&ctx.project.root_path);
 
@@ -112,6 +104,29 @@ fn sync_to_tool_with_context(
     }
 
     let file_path = canonical_dir.join(&filename);
+    let output_path_str = file_path.to_string_lossy().to_string();
+
+    // Skip the write only if the on-disk file still matches the generated content.
+    if let Some(existing) = queries::get_sync_state(&storage.conn, project_id, target)? {
+        if existing.content_hash == hash && output_matches_content(&file_path, &content)? {
+            let refreshed_state = SyncState {
+                id: existing.id,
+                project_id: project_id.to_string(),
+                target: target.to_string(),
+                output_path: output_path_str.clone(),
+                content_hash: hash.clone(),
+                synced_at: existing.synced_at,
+            };
+            queries::upsert_sync_state(&storage.conn, &refreshed_state)?;
+
+            return Ok(SyncResult {
+                target: target.to_string(),
+                output_path: output_path_str,
+                written: false,
+                content_hash: hash,
+            });
+        }
+    }
 
     // Final validation: ensure the resolved file path stays under root
     if !file_path.starts_with(&canonical_root) {
@@ -123,8 +138,6 @@ fn sync_to_tool_with_context(
     // Write file only after path validation
     std::fs::write(&file_path, &content)
         .map_err(|e| AppError::Internal(format!("Failed to write {}: {e}", file_path.display())))?;
-
-    let output_path_str = file_path.to_string_lossy().to_string();
 
     // Update sync state in DB
     let state = SyncState {
@@ -151,9 +164,15 @@ fn sync_to_tool_with_context(
 /// [`SyncResult`] per target. Failures for individual targets are logged
 /// but do not prevent other targets from syncing.
 pub fn sync_all(storage: &StorageManager, project_id: &str) -> Result<Vec<SyncResult>, AppError> {
+    let enabled_targets = load_enabled_targets(storage)?;
+
+    if enabled_targets.is_empty() {
+        return Ok(Vec::new());
+    }
+
     let ctx = queries::assemble_context(&storage.conn, project_id)?;
     let mut results = Vec::new();
-    for target in VALID_TARGETS {
+    for target in enabled_targets {
         match sync_to_tool_with_context(storage, project_id, target, &ctx) {
             Ok(r) => results.push(r),
             Err(e) => {
@@ -162,6 +181,21 @@ pub fn sync_all(storage: &StorageManager, project_id: &str) -> Result<Vec<SyncRe
         }
     }
     Ok(results)
+}
+
+/// Run a settings-aware sync after a context refresh.
+///
+/// When `auto_sync` is disabled the function returns an empty vector and does
+/// not write any output files.
+pub fn sync_after_refresh(
+    storage: &StorageManager,
+    project_id: &str,
+) -> Result<Vec<SyncResult>, AppError> {
+    if !load_auto_sync_enabled(storage)? {
+        return Ok(Vec::new());
+    }
+
+    sync_all(storage, project_id)
 }
 
 /// Format context for a specific target, returning `(content, filename, output_dir)`.
@@ -211,6 +245,64 @@ fn compute_hash(content: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(content.as_bytes());
     format!("{:x}", hasher.finalize())
+}
+
+fn output_matches_content(file_path: &Path, content: &str) -> Result<bool, AppError> {
+    match std::fs::read_to_string(file_path) {
+        Ok(existing_content) => Ok(existing_content == content),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(error) => Err(AppError::Internal(format!(
+            "Failed to read existing output {}: {error}",
+            file_path.display()
+        ))),
+    }
+}
+
+fn load_auto_sync_enabled(storage: &StorageManager) -> Result<bool, AppError> {
+    let raw = queries::get_setting(&storage.conn, AUTO_SYNC_SETTING_KEY)?;
+    Ok(raw.as_deref() != Some("false"))
+}
+
+fn load_enabled_targets(storage: &StorageManager) -> Result<Vec<&str>, AppError> {
+    let raw = queries::get_setting(&storage.conn, ENABLED_ADAPTERS_SETTING_KEY)?;
+
+    match raw {
+        Some(value) => parse_enabled_targets(&value),
+        None => Ok(VALID_TARGETS.to_vec()),
+    }
+}
+
+fn parse_enabled_targets(raw: &str) -> Result<Vec<&'static str>, AppError> {
+    let parsed: Value = serde_json::from_str(raw).map_err(|error| {
+        AppError::InvalidInput(format!("Invalid enabled_adapters setting: {error}"))
+    })?;
+
+    let adapters = parsed.as_array().ok_or_else(|| {
+        AppError::InvalidInput("enabled_adapters setting must be a JSON array".into())
+    })?;
+
+    let mut enabled = Vec::new();
+    for value in adapters {
+        let adapter = value.as_str().ok_or_else(|| {
+            AppError::InvalidInput("enabled_adapters setting must only contain strings".into())
+        })?;
+
+        let normalized = VALID_TARGETS
+            .iter()
+            .find(|candidate| **candidate == adapter)
+            .copied()
+            .ok_or_else(|| {
+                AppError::InvalidInput(format!(
+                    "Unknown adapter in enabled_adapters setting: {adapter}"
+                ))
+            })?;
+
+        if !enabled.contains(&normalized) {
+            enabled.push(normalized);
+        }
+    }
+
+    Ok(enabled)
 }
 
 /// Check whether any existing component in the relative `suffix` path contains a symlink

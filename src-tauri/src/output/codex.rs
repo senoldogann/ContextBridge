@@ -1,6 +1,9 @@
 //! Codex-format output (`AGENTS.md`).
 
-use crate::output::{generate_build_commands, group_notes_by_category};
+use crate::output::{
+    collect_boundary_hints, collect_important_paths, collect_workspace_manifests,
+    display_workspace_dir, generate_build_commands_for_project, group_notes_by_category,
+};
 use contextbridge_core::{AppError, ContextFormatter, ProjectContext};
 use std::fmt::Write;
 use std::path::PathBuf;
@@ -36,6 +39,12 @@ impl ContextFormatter for CodexFormatter {
         // Tech Stack
         write_tech_stack(&mut out, ctx)?;
 
+        // Workspace Map
+        write_workspace_map(&mut out, ctx)?;
+
+        // Important Paths
+        write_important_paths(&mut out, ctx)?;
+
         let groups = group_notes_by_category(&ctx.notes);
 
         // Coding Standards
@@ -57,7 +66,7 @@ impl ContextFormatter for CodexFormatter {
         }
 
         // Boundaries
-        write_boundaries(&mut out, &groups)?;
+        write_boundaries(&mut out, ctx, &groups)?;
 
         // Recent Activity
         write_recent_activity(&mut out, ctx)?;
@@ -79,7 +88,7 @@ impl ContextFormatter for CodexFormatter {
 
 /// Write the setup commands section.
 fn write_setup_commands(out: &mut String, ctx: &ProjectContext) -> Result<(), AppError> {
-    let cmds = generate_build_commands(&ctx.tech_stack);
+    let cmds = generate_build_commands_for_project(&ctx.project.root_path, &ctx.tech_stack);
     if cmds.is_empty() {
         return Ok(());
     }
@@ -112,9 +121,44 @@ fn write_tech_stack(out: &mut String, ctx: &ProjectContext) -> Result<(), AppErr
     Ok(())
 }
 
+fn write_workspace_map(out: &mut String, ctx: &ProjectContext) -> Result<(), AppError> {
+    let workspaces = collect_workspace_manifests(&ctx.project.root_path);
+    if workspaces.is_empty() {
+        return Ok(());
+    }
+
+    writeln!(out, "## Workspace Map\n")?;
+    for workspace in workspaces {
+        let location = display_workspace_dir(&workspace.relative_dir);
+        let manifest = workspace
+            .package_name
+            .as_ref()
+            .map(|value| format!("{} ({value})", workspace.manifest_name))
+            .unwrap_or_else(|| workspace.manifest_name.clone());
+        writeln!(out, "- `{location}` — {manifest}")?;
+    }
+    writeln!(out)?;
+    Ok(())
+}
+
+fn write_important_paths(out: &mut String, ctx: &ProjectContext) -> Result<(), AppError> {
+    let important_paths = collect_important_paths(&ctx.project.root_path, &ctx.tech_stack);
+    if important_paths.is_empty() {
+        return Ok(());
+    }
+
+    writeln!(out, "## Important Paths\n")?;
+    for entry in important_paths {
+        writeln!(out, "- `{}` — {}", entry.path, entry.purpose)?;
+    }
+    writeln!(out)?;
+    Ok(())
+}
+
 /// Write the boundaries section from notes or defaults.
 fn write_boundaries(
     out: &mut String,
+    ctx: &ProjectContext,
     groups: &std::collections::BTreeMap<&str, Vec<&contextbridge_core::ContextNote>>,
 ) -> Result<(), AppError> {
     writeln!(out, "## Boundaries\n")?;
@@ -123,6 +167,10 @@ fn write_boundaries(
         for note in notes {
             writeln!(out, "- {}", note.content.lines().next().unwrap_or_default())?;
         }
+    }
+
+    for hint in collect_boundary_hints(&ctx.project.root_path, &ctx.tech_stack) {
+        writeln!(out, "- {hint}")?;
     }
 
     for dir in DEFAULT_BOUNDARIES {

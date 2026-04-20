@@ -6,11 +6,12 @@ interface ProjectState {
   projects: Project[];
   selectedProject: Project | null;
   isLoading: boolean;
+  isAddingProject: boolean;
   error: string | null;
   contextMap: Record<string, ProjectContext>;
   loadProjects: () => Promise<void>;
   selectProject: (id: string) => void;
-  addProject: (name: string, path: string) => Promise<void>;
+  addProject: (name: string, path: string) => Promise<Project | null>;
   removeProject: (id: string) => Promise<void>;
   loadContext: (projectId: string) => Promise<void>;
   syncTarget: (projectId: string, target: string) => Promise<SyncResult>;
@@ -24,12 +25,22 @@ interface ProjectState {
     priority: number,
   ) => Promise<void>;
   deleteNote: (projectId: string, noteId: string) => Promise<void>;
+  updateNote: (
+    projectId: string,
+    noteId: string,
+    category: string,
+    title: string,
+    content: string,
+    priority: number,
+  ) => Promise<void>;
+  partialRefreshProject: (projectId: string, changedPaths: string[]) => Promise<void>;
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
   projects: [],
   selectedProject: null,
   isLoading: false,
+  isAddingProject: false,
   error: null,
   contextMap: {},
 
@@ -50,16 +61,19 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   addProject: async (name: string, path: string) => {
-    set({ error: null });
+    set({ error: null, isAddingProject: true });
     try {
       const project = await tauri.addProject(name, path);
       set((state) => ({
         projects: [...state.projects, project],
         selectedProject: project,
+        isAddingProject: false,
       }));
+      return project;
     } catch (err) {
       console.error("Failed to add project:", err);
-      set({ error: String(err) });
+      set({ error: String(err), isAddingProject: false });
+      return null;
     }
   },
 
@@ -97,7 +111,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   syncTarget: async (projectId: string, target: string) => {
     try {
       const result = await tauri.syncToTool(projectId, target);
-      void get().loadContext(projectId);
+      await get().loadContext(projectId);
       return result;
     } catch (err) {
       set({ error: `Sync failed: ${String(err)}` });
@@ -108,7 +122,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   syncAll: async (projectId: string) => {
     try {
       const results = await tauri.syncAllTools(projectId);
-      void get().loadContext(projectId);
+      await get().loadContext(projectId);
       return results;
     } catch (err) {
       set({ error: `Sync failed: ${String(err)}` });
@@ -142,6 +156,26 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       await get().loadContext(projectId);
     } catch (err) {
       console.error("Failed to delete note:", err);
+      set({ error: String(err) });
+    }
+  },
+
+  updateNote: async (projectId, noteId, category, title, content, priority) => {
+    try {
+      await tauri.updateNote(projectId, noteId, category, title, content, priority);
+      await get().loadContext(projectId);
+    } catch (err) {
+      console.error("Failed to update note:", err);
+      set({ error: String(err) });
+    }
+  },
+
+  partialRefreshProject: async (projectId, changedPaths) => {
+    try {
+      await tauri.partialRefreshProject(projectId, changedPaths);
+      await get().loadContext(projectId);
+    } catch (err) {
+      console.error("Failed to partial refresh:", err);
       set({ error: String(err) });
     }
   },

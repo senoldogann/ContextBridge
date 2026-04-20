@@ -1,10 +1,10 @@
 # ContextBridge Architecture
 
-> Last updated: 2025
+> Last updated: 2026
 
 ## System Overview
 
-ContextBridge is a **Tauri v2 menu-bar application** that watches your project files, builds a searchable context database, and outputs AI-tool-specific configuration files (CLAUDE.md, .github/copilot-instructions.md, etc.).
+ContextBridge is a **Tauri v2 desktop application with tray integration** that watches your project files, builds a searchable context database, and outputs AI-tool-specific configuration files (`CLAUDE.md`, `.github/copilot-instructions.md`, `.cursor/rules/contextbridge.mdc`, `AGENTS.md`).
 
 The app ships as a single native binary per platform — no runtime dependencies on Node.js, Python, or Docker.
 
@@ -66,11 +66,12 @@ src-tauri/src/
 │   ├── projects.rs      # Project CRUD commands
 │   ├── context.rs       # Context query commands
 │   └── settings.rs      # Settings commands
-├── core/
+├── engine/
 │   ├── mod.rs
 │   ├── context_engine.rs  # Central orchestrator
 │   ├── project_scanner.rs # Directory walk + hashing
 │   ├── git_analyzer.rs    # Git metadata extraction
+│   ├── sync.rs            # Settings-aware output sync engine
 │   └── watcher.rs         # File system watcher (notify crate)
 ├── db/
 │   ├── mod.rs
@@ -99,38 +100,43 @@ A standalone binary that exposes the context database over the [Model Context Pr
          │ notify events
          ▼
   ┌──────────────┐     ┌───────────────┐
-  │   Watcher    │────►│ Context Engine │
-  │  (OS thread) │     │   (tokio)     │
+  │   Watcher    │────►│  Tauri Event   │
+  │  (OS thread) │     │    Bridge      │
   └──────────────┘     └───────┬───────┘
-         mpsc                  │
-         bridge                ▼
-                        ┌──────────────┐
-                        │   SQLite DB   │
-                        │  WAL + FTS5   │
-                        └───────┬──────┘
-                                │
-                    ┌───────────┼───────────┐
-                    ▼           ▼           ▼
-             ┌──────────┐ ┌─────────┐ ┌─────────┐
-             │ CLAUDE.md│ │ Copilot │ │ Cursor  │
-             │ adapter  │ │ adapter │ │ adapter │
-             └──────────┘ └─────────┘ └─────────┘
-                    │           │           │
-                    ▼           ▼           ▼
-              AI tool config files written to project
+                │
+                ▼
+            ┌──────────────┐
+            │ Context Engine│
+            │ + Sync Engine │
+            └───────┬──────┘
+                ▼
+            ┌──────────────┐
+            │   SQLite DB   │
+            │  WAL + FTS5   │
+            └───────┬──────┘
+                │
+            Settings-aware output
+                │
+            ┌───────────┼───────────┬───────────┐
+            ▼           ▼           ▼           ▼
+         ┌──────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐
+         │ CLAUDE.md│ │ Copilot │ │ Cursor  │ │ AGENTS  │
+         │ adapter  │ │ adapter │ │ adapter │ │ adapter │
+         └──────────┘ └─────────┘ └─────────┘ └─────────┘
 ```
 
-1. **File watcher** runs on a dedicated OS thread using the `notify` crate. It bridges events to the async runtime via an `mpsc` channel.
-2. **Context Engine** receives events, scans files, extracts metadata (language, size, git status, content hashes), and writes entries to SQLite.
-3. **SQLite** stores all structured data. FTS5 indexes provide full-text search over file contents and annotations.
-4. **Output formatters** implement the `ContextFormatter` trait. Each adapter reads context from the DB and writes a tool-specific config file (e.g., `CLAUDE.md`, `.github/copilot-instructions.md`).
+1. **File watcher** runs on a dedicated OS thread using the `notify` crate and emits debounced `file-change` events.
+2. **Frontend auto-sync orchestration** listens for those events and triggers a refresh when the `auto_sync` setting is enabled.
+3. **Context Engine** scans files, extracts metadata (language, size, git status, content hashes), and writes entries to SQLite.
+4. **Sync Engine** reads `auto_sync` and `enabled_adapters` from the `settings` table, then writes only the allowed tool outputs.
+5. **SQLite** stores structured project data, sync state, and settings. FTS5 indexes provide full-text search over notes and annotations.
 
 ## Module Responsibilities
 
 | Layer        | Modules      | Responsibility                                   |
 | ------------ | ------------ | ------------------------------------------------ |
 | **Commands** | `commands/*` | Thin IPC surface — validate, delegate, serialize |
-| **Core**     | `core/*`     | All business logic: scanning, watching, engine   |
+| **Engine**   | `engine/*`   | Scanning, watching, refresh orchestration, sync  |
 | **Output**   | `output/*`   | Format context for specific AI tools             |
 | **DB**       | `db/*`       | SQLite connection, queries, migrations           |
 | **State**    | `state.rs`   | Shared application state (`Arc<Mutex<...>>`)     |
@@ -138,9 +144,9 @@ A standalone binary that exposes the context database over the [Model Context Pr
 
 ## State Management
 
-- **Rust is the source of truth.** All data lives in SQLite, managed by the Rust backend.
-- **Frontend is a display layer.** React components render data received via Tauri IPC commands.
-- **Zustand** is used only for transient UI state (sidebar selection, modal visibility, theme). It never caches domain data long-term.
+- **Rust is the source of truth.** All persistent data lives in SQLite, managed by the Rust backend.
+- **Frontend orchestrates local UX.** React components render IPC results and handle watcher-driven refresh triggers.
+- **Zustand** stores both UI state and short-lived client caches such as the project list and assembled project context.
 - **No REST API.** Communication is exclusively via Tauri's type-safe IPC (`invoke` / `listen`).
 
 ## Database
@@ -191,7 +197,7 @@ The file watcher uses the `notify` crate (v6) with a dedicated OS thread:
 2. File events are sent over an `mpsc::Sender` to the Tokio runtime.
 3. The async receiver debounces events and feeds them to the Context Engine.
 
-This design avoids blocking the Tokio runtime with synchronous filesystem operations and ensures responsive UI updates.
+This design avoids blocking the Tokio runtime with synchronous filesystem operations and keeps watcher notifications responsive while the frontend decides whether to trigger a refresh.
 
 ## AI Tool Output
 
@@ -200,7 +206,8 @@ All output adapters implement the `ContextFormatter` trait:
 ```rust
 pub trait ContextFormatter {
     fn format(&self, context: &ProjectContext) -> Result<String>;
-    fn filename(&self) -> &str;
+    fn output_filename(&self) -> &str;
+    fn output_directory(&self) -> PathBuf;
 }
 ```
 
@@ -210,7 +217,7 @@ Each adapter produces a tool-specific file:
 | ------- | --------------------------------- |
 | Claude  | `CLAUDE.md`                       |
 | Copilot | `.github/copilot-instructions.md` |
-| Cursor  | `.cursorrules`                    |
+| Cursor  | `.cursor/rules/contextbridge.mdc` |
 | Codex   | `AGENTS.md`                       |
 
-The trait-based design makes adding new AI tool adapters trivial — implement two methods and register the formatter.
+The trait-based design makes adding new AI tool adapters straightforward — implement the formatter, file name, and output directory, then register the target in the sync engine.

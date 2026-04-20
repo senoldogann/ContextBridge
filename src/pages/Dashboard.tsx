@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { FolderOpen, Plus, Activity } from "lucide-react";
+import { FolderOpen, Plus, Activity, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useProjectStore } from "@/stores/projectStore";
 import { useNavigationStore } from "@/stores/navigationStore";
@@ -17,8 +17,11 @@ const cardVariants = {
   }),
 };
 
+const dashboardCardClassName = "flex h-full min-h-[132px] flex-col justify-between";
+
 export function Dashboard() {
   const projects = useProjectStore((s) => s.projects);
+  const isAddingProject = useProjectStore((s) => s.isAddingProject);
   const loadProjects = useProjectStore((s) => s.loadProjects);
   const selectProject = useProjectStore((s) => s.selectProject);
   const navigate = useNavigationStore((s) => s.navigate);
@@ -53,7 +56,7 @@ export function Dashboard() {
       </header>
 
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:auto-rows-fr sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((project, i) => (
             <motion.div
               key={project.id}
@@ -61,8 +64,13 @@ export function Dashboard() {
               variants={cardVariants}
               initial="hidden"
               animate="visible"
+              className="h-full"
             >
-              <Card hoverable onClick={() => handleOpenProject(project.id)}>
+              <Card
+                className={dashboardCardClassName}
+                hoverable
+                onClick={() => handleOpenProject(project.id)}
+              >
                 <div
                   className="absolute inset-x-0 top-0 h-px"
                   style={{
@@ -115,13 +123,18 @@ export function Dashboard() {
           <motion.button
             type="button"
             onClick={handleAddProject}
-            className="group flex min-h-[120px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 transition-all duration-200"
+            disabled={isAddingProject}
+            className="group flex h-full min-h-[132px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 transition-all duration-200"
             style={{
               borderColor: "var(--border-dashed)",
               color: "var(--text-muted)",
               background: "transparent",
+              opacity: isAddingProject ? 0.7 : 1,
             }}
             onMouseEnter={(e) => {
+              if (isAddingProject) {
+                return;
+              }
               (e.currentTarget as HTMLElement).style.borderColor = "var(--primary-ring)";
               (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
               (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-hover)";
@@ -131,17 +144,28 @@ export function Dashboard() {
               (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
               (e.currentTarget as HTMLElement).style.boxShadow = "none";
             }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={isAddingProject ? undefined : { scale: 1.02 }}
+            whileTap={isAddingProject ? undefined : { scale: 0.98 }}
             aria-label="Add new project"
           >
             <div
               className="rounded-full p-2 transition-colors"
               style={{ background: "var(--bg-hover)" }}
             >
-              <Plus size={24} />
+              {isAddingProject ? (
+                <Loader2 size={24} className="animate-spin" />
+              ) : (
+                <Plus size={24} />
+              )}
             </div>
-            <span className="text-sm font-medium">Add Project</span>
+            <span className="text-sm font-medium">
+              {isAddingProject ? "Indexing project..." : "Add Project"}
+            </span>
+            {isAddingProject && (
+              <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                Scanning files and preparing context outputs
+              </span>
+            )}
           </motion.button>
         </div>
       </div>

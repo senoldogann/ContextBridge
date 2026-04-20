@@ -40,6 +40,7 @@ describe("projectStore", () => {
       projects: [],
       selectedProject: null,
       isLoading: false,
+      isAddingProject: false,
       error: null,
       contextMap: {},
     });
@@ -93,15 +94,30 @@ describe("projectStore", () => {
     it("calls IPC and appends the new project", async () => {
       mockedInvoke.mockResolvedValueOnce(fakeProject);
 
-      await useProjectStore.getState().addProject("Test Project", "/home/user/test");
+      const result = await useProjectStore.getState().addProject("Test Project", "/home/user/test");
 
       expect(mockedInvoke).toHaveBeenCalledWith("add_project", {
         name: "Test Project",
         rootPath: "/home/user/test",
       });
       const state = useProjectStore.getState();
+      expect(result).toEqual(fakeProject);
       expect(state.projects).toHaveLength(1);
       expect(state.selectedProject?.id).toBe("p1");
+      expect(state.isAddingProject).toBe(false);
+    });
+
+    it("sets isAddingProject while the request is in flight", async () => {
+      let addingDuringCall = false;
+      mockedInvoke.mockImplementationOnce(async () => {
+        addingDuringCall = useProjectStore.getState().isAddingProject;
+        return fakeProject;
+      });
+
+      await useProjectStore.getState().addProject("Test Project", "/home/user/test");
+
+      expect(addingDuringCall).toBe(true);
+      expect(useProjectStore.getState().isAddingProject).toBe(false);
     });
   });
 
@@ -153,9 +169,11 @@ describe("projectStore", () => {
     it("sets error state on addProject IPC failure", async () => {
       mockedInvoke.mockRejectedValueOnce(new Error("Permission denied"));
 
-      await useProjectStore.getState().addProject("fail", "/fail");
+      const result = await useProjectStore.getState().addProject("fail", "/fail");
 
+      expect(result).toBeNull();
       expect(useProjectStore.getState().error).toContain("Permission denied");
+      expect(useProjectStore.getState().isAddingProject).toBe(false);
     });
 
     it("sets error state on removeProject IPC failure", async () => {

@@ -3,6 +3,7 @@
 use contextbridge_core::{ContextNote, RecentChange, TechEntry};
 use contextbridge_lib::db::models::Project;
 use contextbridge_lib::db::{queries, StorageManager};
+use std::{thread, time::Duration};
 use tempfile::TempDir;
 
 /// Helper: create an in-memory DB with a project pointing at `dir`.
@@ -150,6 +151,50 @@ fn test_sync_content_hash_skip() {
     assert_eq!(first.content_hash, second.content_hash);
 }
 
+#[test]
+fn test_sync_content_hash_skip_refreshes_sync_timestamp() {
+    let (storage, _dir, pid) = setup_test_project();
+
+    let first = contextbridge_lib::engine::sync::sync_to_tool(&storage, &pid, "claude").unwrap();
+    assert!(first.written, "first sync should write");
+
+    let first_state = queries::get_sync_state(storage.conn(), &pid, "claude")
+        .unwrap()
+        .expect("expected initial sync state");
+
+    thread::sleep(Duration::from_millis(25));
+
+    let second = contextbridge_lib::engine::sync::sync_to_tool(&storage, &pid, "claude").unwrap();
+    assert!(!second.written, "second sync should skip the file write");
+
+    let second_state = queries::get_sync_state(storage.conn(), &pid, "claude")
+        .unwrap()
+        .expect("expected refreshed sync state");
+
+    assert_ne!(first_state.synced_at, second_state.synced_at);
+    assert!(second_state.synced_at.contains('T'));
+    assert!(second_state.synced_at.ends_with('Z'));
+}
+
+#[test]
+fn test_sync_rewrites_missing_output_even_when_hash_matches() {
+    let (storage, dir, pid) = setup_test_project();
+
+    let first = contextbridge_lib::engine::sync::sync_to_tool(&storage, &pid, "claude").unwrap();
+    assert!(first.written, "first sync should write");
+
+    let output_path = dir.path().join("CLAUDE.md");
+    std::fs::remove_file(&output_path).unwrap();
+
+    let second = contextbridge_lib::engine::sync::sync_to_tool(&storage, &pid, "claude").unwrap();
+
+    assert!(second.written, "missing output file should be recreated");
+    assert!(
+        output_path.exists(),
+        "sync should recreate the missing output file"
+    );
+}
+
 // ---------------------------------------------------------------------------
 // Error handling
 // ---------------------------------------------------------------------------
@@ -189,4 +234,44 @@ fn test_sync_all() {
     for r in &results {
         assert!(r.written, "all first syncs should write");
     }
+}
+
+#[test]
+fn test_sync_all_respects_enabled_adapters_setting() {
+    let (storage, dir, pid) = setup_test_project();
+    queries::set_setting(storage.conn(), "enabled_adapters", r#"["claude","codex"]"#).unwrap();
+
+    let results = contextbridge_lib::engine::sync::sync_all(&storage, &pid).unwrap();
+
+    assert_eq!(
+        results.len(),
+        2,
+        "sync_all should only run enabled adapters"
+    );
+
+    let targets: Vec<&str> = results.iter().map(|r| r.target.as_str()).collect();
+    assert!(targets.contains(&"claude"), "missing claude target");
+    assert!(targets.contains(&"codex"), "missing codex target");
+    assert!(!targets.contains(&"cursor"), "cursor should be skipped");
+    assert!(!targets.contains(&"copilot"), "copilot should be skipped");
+
+    assert!(dir.path().join("CLAUDE.md").exists());
+    assert!(dir.path().join("AGENTS.md").exists());
+    assert!(!dir.path().join(".cursor/rules/contextbridge.mdc").exists());
+    assert!(!dir.path().join(".github/copilot-instructions.md").exists());
+}
+
+#[test]
+fn test_sync_after_refresh_skips_when_auto_sync_disabled() {
+    let (storage, dir, pid) = setup_test_project();
+    queries::set_setting(storage.conn(), "auto_sync", "false").unwrap();
+
+    let results = contextbridge_lib::engine::sync::sync_after_refresh(&storage, &pid).unwrap();
+
+    assert!(
+        results.is_empty(),
+        "auto-sync should skip all writes when disabled"
+    );
+    assert!(!dir.path().join("CLAUDE.md").exists());
+    assert!(!dir.path().join("AGENTS.md").exists());
 }

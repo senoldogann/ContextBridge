@@ -67,7 +67,14 @@ export function UpdateChecker() {
   if (dismissed || state.phase === "idle") return null;
 
   return (
-    <div className="flex items-center justify-between bg-blue-900/40 px-4 py-2 text-sm text-blue-100 ring-1 ring-blue-500/20 backdrop-blur-sm">
+    <div
+      className="flex items-center justify-between px-4 py-2 text-sm backdrop-blur-sm"
+      style={{
+        background: "var(--bg-elevated)",
+        color: "var(--text-primary)",
+        borderBottom: "1px solid var(--border)",
+      }}
+    >
       {state.phase === "available" && (
         <>
           <span>Update available: v{state.version}</span>
@@ -75,14 +82,26 @@ export function UpdateChecker() {
             <button
               type="button"
               onClick={handleUpdate}
-              className="rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-3 py-1 text-xs font-medium text-white shadow-lg shadow-blue-500/25 transition-all hover:from-blue-500 hover:to-blue-400"
+              className="rounded-lg px-3 py-1 text-xs font-medium transition-all hover:opacity-90"
+              style={{
+                background: "var(--primary)",
+                color: "var(--bg-base)",
+                boxShadow: "0 4px 12px var(--primary-ring)",
+              }}
             >
               Update Now
             </button>
             <button
               type="button"
               onClick={() => setDismissed(true)}
-              className="rounded-lg px-3 py-1 text-xs text-blue-300 transition-colors hover:bg-blue-800/50"
+              className="rounded-lg px-3 py-1 text-xs transition-colors"
+              style={{ color: "var(--text-secondary)" }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background = "var(--bg-hover)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background = "transparent";
+              }}
             >
               Later
             </button>
@@ -93,7 +112,10 @@ export function UpdateChecker() {
       {state.phase === "downloading" && (
         <div className="flex w-full items-center gap-3">
           <span>Downloading update…</span>
-          <div className="h-2 flex-1 overflow-hidden rounded-full bg-blue-950">
+          <div
+            className="h-2 flex-1 overflow-hidden rounded-full"
+            style={{ background: "var(--bg-input)" }}
+          >
             <div
               className="h-2 rounded-full transition-all duration-300"
               style={{ background: "var(--primary)", width: `${state.progress}%` }}
@@ -103,15 +125,24 @@ export function UpdateChecker() {
         </div>
       )}
 
-      {state.phase === "ready" && <span>Update installed — restarting…</span>}
+      {state.phase === "ready" && (
+        <span style={{ color: "var(--alert-success-text)" }}>Update installed — restarting…</span>
+      )}
 
       {state.phase === "error" && (
         <>
-          <span className="text-red-300">Update error: {state.message}</span>
+          <span style={{ color: "var(--alert-error-text)" }}>Update error: {state.message}</span>
           <button
             type="button"
             onClick={() => setDismissed(true)}
-            className="ml-4 rounded px-2 py-0.5 text-xs text-red-300 hover:bg-red-800"
+            className="ml-4 rounded px-2 py-0.5 text-xs"
+            style={{ color: "var(--alert-error-text)" }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.background = "var(--alert-error-hover)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.background = "transparent";
+            }}
           >
             Dismiss
           </button>

@@ -24,7 +24,11 @@ export function ProjectCard({ project, isSelected, onSelect }: ProjectCardProps)
               color: "var(--text-primary)",
               boxShadow: `inset 0 0 0 1px var(--border-active)`,
             }
-          : { color: "var(--text-secondary)" }
+          : {
+              background: "transparent",
+              color: "var(--text-secondary)",
+              boxShadow: "none",
+            }
       }
       onMouseEnter={(e) => {
         if (!isSelected) (e.currentTarget as HTMLElement).style.background = "var(--bg-hover)";

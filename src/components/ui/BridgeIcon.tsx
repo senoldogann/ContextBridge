@@ -16,18 +16,18 @@ export function BridgeIcon({ className = "h-5 w-5", gradient = false }: BridgeIc
         width="64"
         height="64"
         rx="14"
-        fill={gradient ? "#171717" : "currentColor"}
+        fill={gradient ? "var(--bg-surface)" : "currentColor"}
         opacity={gradient ? 1 : 0.12}
       />
       <path
         d="M12 40 C12 40 20 24 32 24 C44 24 52 40 52 40"
-        stroke={gradient ? "#10a37f" : "currentColor"}
+        stroke={gradient ? "var(--primary)" : "currentColor"}
         strokeWidth="4"
         strokeLinecap="round"
       />
       <path
         d="M12 40 C12 40 20 32 32 32 C44 32 52 40 52 40"
-        stroke={gradient ? "#13c294" : "currentColor"}
+        stroke={gradient ? "var(--primary-hover)" : "currentColor"}
         strokeWidth="2.5"
         strokeLinecap="round"
       />
@@ -36,7 +36,7 @@ export function BridgeIcon({ className = "h-5 w-5", gradient = false }: BridgeIc
         y1="40"
         x2="20"
         y2="28"
-        stroke={gradient ? "#10a37f" : "currentColor"}
+        stroke={gradient ? "var(--primary)" : "currentColor"}
         strokeWidth="3"
         strokeLinecap="round"
       />
@@ -45,7 +45,7 @@ export function BridgeIcon({ className = "h-5 w-5", gradient = false }: BridgeIc
         y1="40"
         x2="32"
         y2="24"
-        stroke={gradient ? "#10a37f" : "currentColor"}
+        stroke={gradient ? "var(--primary)" : "currentColor"}
         strokeWidth="3"
         strokeLinecap="round"
       />
@@ -54,7 +54,7 @@ export function BridgeIcon({ className = "h-5 w-5", gradient = false }: BridgeIc
         y1="40"
         x2="44"
         y2="28"
-        stroke={gradient ? "#10a37f" : "currentColor"}
+        stroke={gradient ? "var(--primary)" : "currentColor"}
         strokeWidth="3"
         strokeLinecap="round"
       />
@@ -63,7 +63,7 @@ export function BridgeIcon({ className = "h-5 w-5", gradient = false }: BridgeIc
         y1="40"
         x2="56"
         y2="40"
-        stroke={gradient ? "#4a7afe" : "currentColor"}
+        stroke={gradient ? "var(--accent)" : "currentColor"}
         strokeWidth="3"
         strokeLinecap="round"
       />

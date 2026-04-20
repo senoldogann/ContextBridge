@@ -7,7 +7,7 @@ use std::path::Path;
 use std::time::Instant;
 
 use chrono::Utc;
-use contextbridge_core::{ContextNote, ProjectContext, TechEntry};
+use contextbridge_core::{ContextNote, ProjectContext, RecentChange, TechEntry};
 use rusqlite::params;
 
 use crate::db::queries;
@@ -278,6 +278,45 @@ pub fn partial_refresh(
         let tech_stack = queries::get_tech_stack(conn, project_id)?;
         let note = generate_tech_summary_note(&tech_stack, project_id);
         upsert_auto_note(conn, &note)?;
+    }
+
+    // Record the file changes as a recent_change entry so they appear in the
+    // Changes tab alongside git commits.
+    let valid_paths: Vec<&str> = changed_paths
+        .iter()
+        .filter(|p| {
+            let rel = Path::new(p.as_str());
+            !rel.is_absolute()
+                && !rel
+                    .components()
+                    .any(|c| matches!(c, std::path::Component::ParentDir))
+        })
+        .map(|p| p.as_str())
+        .collect();
+
+    if !valid_paths.is_empty() {
+        let file_count = valid_paths.len();
+        let summary = if file_count == 1 {
+            format!("File changed: {}", valid_paths[0])
+        } else {
+            format!("{file_count} files changed")
+        };
+
+        let files_json =
+            serde_json::to_string(&valid_paths).unwrap_or_else(|_| "[]".to_string());
+        let now = Utc::now().to_rfc3339();
+
+        let change = RecentChange {
+            id: 0,
+            project_id: project_id.to_string(),
+            change_type: "file_change".into(),
+            summary,
+            files: files_json,
+            author: None,
+            timestamp: now,
+            commit_hash: None,
+        };
+        queries::insert_recent_change(conn, &change)?;
     }
 
     Ok(())

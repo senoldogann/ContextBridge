@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 interface TabItem {
   id: string;
   label: string;
+  icon?: React.ReactNode;
   content: React.ReactNode;
 }
 
@@ -31,9 +32,10 @@ export function TabGroup({ tabs, defaultTab }: TabGroupProps) {
             aria-selected={activeTab === tab.id}
             aria-controls={`panel-${tab.id}`}
             onClick={() => setActiveTab(tab.id)}
-            className="relative px-4 py-2.5 text-sm font-medium transition-colors"
+            className="relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors"
             style={{ color: activeTab === tab.id ? "var(--primary)" : "var(--text-muted)" }}
           >
+            {tab.icon}
             {tab.label}
             {activeTab === tab.id && (
               <motion.div

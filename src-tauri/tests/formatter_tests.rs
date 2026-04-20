@@ -1,7 +1,10 @@
 //! Integration tests for Phase 3 AI tool output formatters.
 
 use contextbridge_core::*;
-use contextbridge_lib::output::{generate_build_commands, generate_globs_from_tech};
+use contextbridge_lib::output::{
+    collect_important_paths, collect_workspace_manifests, generate_build_commands,
+    generate_build_commands_for_project, generate_globs_from_tech,
+};
 
 /// Helper: build a realistic [`ProjectContext`] for formatter tests.
 fn test_context() -> ProjectContext {
@@ -78,6 +81,12 @@ fn test_context() -> ProjectContext {
         }],
         sync_state: vec![],
     }
+}
+
+fn test_context_at(root_path: &str) -> ProjectContext {
+    let mut context = test_context();
+    context.project.root_path = root_path.to_string();
+    context
 }
 
 // ---------------------------------------------------------------------------
@@ -250,6 +259,142 @@ fn test_copilot_formatter_sections() {
     );
 }
 
+#[test]
+fn test_workspace_and_path_helpers_detect_real_project_surfaces() {
+    let dir = tempfile::TempDir::new().unwrap();
+    std::fs::create_dir_all(dir.path().join("apps/mobile")).unwrap();
+    std::fs::create_dir_all(dir.path().join("src")).unwrap();
+    std::fs::create_dir_all(dir.path().join("src-tauri/src")).unwrap();
+
+    std::fs::write(
+        dir.path().join("package.json"),
+        r#"{
+          "name": "workspace-root",
+          "scripts": {
+            "dev": "vite",
+            "build": "vite build",
+            "test": "vitest run"
+          }
+        }"#,
+    )
+    .unwrap();
+    std::fs::write(
+        dir.path().join("apps/mobile/package.json"),
+        r#"{
+          "name": "mobile-app",
+          "scripts": {
+            "start": "expo start"
+          }
+        }"#,
+    )
+    .unwrap();
+    std::fs::write(dir.path().join("src/main.tsx"), "export {};\n").unwrap();
+    std::fs::write(dir.path().join("src/App.tsx"), "export {};\n").unwrap();
+    std::fs::write(
+        dir.path().join("src-tauri/Cargo.toml"),
+        "[package]\nname = \"desktop-app\"\nversion = \"0.1.0\"\n",
+    )
+    .unwrap();
+    std::fs::write(dir.path().join("src-tauri/src/main.rs"), "fn main() {}\n").unwrap();
+
+    let workspace_manifests = collect_workspace_manifests(dir.path().to_string_lossy().as_ref());
+    let important_paths = collect_important_paths(
+        dir.path().to_string_lossy().as_ref(),
+        &test_context().tech_stack,
+    );
+
+    assert!(
+        workspace_manifests
+            .iter()
+            .any(|entry| entry.relative_dir == "."
+                && entry.package_name.as_deref() == Some("workspace-root")),
+        "root package.json should be discovered"
+    );
+    assert!(
+        workspace_manifests
+            .iter()
+            .any(|entry| entry.relative_dir == "apps/mobile"
+                && entry.package_name.as_deref() == Some("mobile-app")),
+        "nested workspace package.json should be discovered"
+    );
+    assert!(
+        workspace_manifests
+            .iter()
+            .any(|entry| entry.relative_dir == "src-tauri"
+                && entry.package_name.as_deref() == Some("desktop-app")),
+        "Cargo workspace should be discovered"
+    );
+    assert!(
+        important_paths
+            .iter()
+            .any(|entry| entry.path == "src/main.tsx"),
+        "frontend bootstrap should be surfaced as an important path"
+    );
+    assert!(
+        important_paths
+            .iter()
+            .any(|entry| entry.path == "src-tauri/src/main.rs"),
+        "desktop entrypoint should be surfaced as an important path"
+    );
+}
+
+#[test]
+fn test_copilot_formatter_includes_workspace_map_and_important_paths() {
+    use contextbridge_lib::output::copilot::CopilotFormatter;
+
+    let dir = tempfile::TempDir::new().unwrap();
+    std::fs::create_dir_all(dir.path().join("apps/mobile")).unwrap();
+    std::fs::create_dir_all(dir.path().join("src")).unwrap();
+
+    std::fs::write(
+        dir.path().join("package.json"),
+        r#"{
+          "name": "workspace-root",
+          "scripts": {
+            "dev": "vite",
+            "build": "vite build",
+            "test": "vitest run"
+          }
+        }"#,
+    )
+    .unwrap();
+    std::fs::write(
+        dir.path().join("apps/mobile/package.json"),
+        r#"{
+          "name": "mobile-app",
+          "scripts": {
+            "start": "expo start"
+          }
+        }"#,
+    )
+    .unwrap();
+    std::fs::write(dir.path().join("src/main.tsx"), "export {};\n").unwrap();
+
+    let context = test_context_at(dir.path().to_string_lossy().as_ref());
+    let output = CopilotFormatter.format(&context).unwrap();
+
+    assert!(
+        output.contains("## Preferred Commands"),
+        "preferred commands section should be present"
+    );
+    assert!(
+        output.contains("## Workspace Map"),
+        "workspace map section should be present"
+    );
+    assert!(
+        output.contains("mobile-app"),
+        "workspace map should include nested package names"
+    );
+    assert!(
+        output.contains("## Important Paths"),
+        "important paths section should be present"
+    );
+    assert!(
+        output.contains("src/main.tsx"),
+        "important paths should include frontend bootstrap"
+    );
+}
+
 // ---------------------------------------------------------------------------
 // Codex formatter
 // ---------------------------------------------------------------------------
@@ -407,4 +552,82 @@ fn test_build_commands_from_tech() {
         cmd_strs.contains(&"npm install"),
         "mixed: missing npm install"
     );
+}
+
+#[test]
+fn test_build_commands_for_pnpm_workspace_project() {
+    let dir = tempfile::TempDir::new().unwrap();
+    std::fs::write(
+        dir.path().join("package.json"),
+        r#"{
+        "name": "copilot-mobile",
+        "scripts": {
+            "dev:bridge": "pnpm --filter bridge-server dev",
+            "dev:mobile": "pnpm --filter mobile start",
+            "build:bridge": "pnpm --filter bridge-server build",
+            "build:shared": "pnpm --filter @copilot-mobile/shared build",
+            "typecheck": "pnpm -r typecheck"
+        },
+        "engines": {
+            "node": ">=20.0.0",
+            "pnpm": ">=9.0.0"
+        }
+    }"#,
+    )
+    .unwrap();
+    std::fs::write(
+        dir.path().join("pnpm-workspace.yaml"),
+        "packages:\n  - \"apps/*\"\n  - \"packages/*\"\n",
+    )
+    .unwrap();
+
+    let tech = vec![TechEntry {
+        id: 1,
+        project_id: "t".into(),
+        category: "runtime".into(),
+        name: "Node.js".into(),
+        version: Some(">=20.0.0".into()),
+        confidence: 1.0,
+        source: "package.json".into(),
+    }];
+
+    let cmds = generate_build_commands_for_project(&dir.path().to_string_lossy(), &tech);
+    let labels: Vec<&str> = cmds.iter().map(|(label, _)| label.as_str()).collect();
+    let cmd_strs: Vec<&str> = cmds.iter().map(|(_, cmd)| cmd.as_str()).collect();
+
+    assert!(cmd_strs.contains(&"pnpm install"));
+    assert!(cmd_strs.contains(&"pnpm typecheck"));
+    assert!(cmd_strs.contains(&"pnpm build:bridge"));
+    assert!(cmd_strs.contains(&"pnpm build:shared"));
+    assert!(cmd_strs.contains(&"pnpm dev:bridge"));
+    assert!(cmd_strs.contains(&"pnpm dev:mobile"));
+    assert!(labels.contains(&"Build Bridge"));
+    assert!(labels.contains(&"Dev Mobile"));
+}
+
+#[test]
+fn test_build_commands_for_npm_project_use_builtin_shortcuts() {
+    let dir = tempfile::TempDir::new().unwrap();
+    std::fs::write(
+        dir.path().join("package.json"),
+        r#"{
+        "name": "web-app",
+        "scripts": {
+            "start": "vite preview",
+            "test": "vitest run",
+            "build": "vite build"
+        }
+    }"#,
+    )
+    .unwrap();
+
+    let commands = generate_build_commands_for_project(dir.path().to_string_lossy().as_ref(), &[]);
+    let command_strings: Vec<&str> = commands
+        .iter()
+        .map(|(_, command)| command.as_str())
+        .collect();
+
+    assert!(command_strings.contains(&"npm start"));
+    assert!(command_strings.contains(&"npm test"));
+    assert!(command_strings.contains(&"npm run build"));
 }

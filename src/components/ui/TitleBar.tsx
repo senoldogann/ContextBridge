@@ -1,3 +1,4 @@
+import type { MouseEvent } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Moon, Sun, PanelLeftClose, PanelLeft, HelpCircle } from "lucide-react";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -6,6 +7,14 @@ import { BridgeIcon } from "@/components/ui/BridgeIcon";
 
 interface TitleBarProps {
   onShowGuide: () => void;
+}
+
+function isWindowControlTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && target.closest("[data-window-control]") !== null;
+}
+
+function logWindowActionError(action: string, error: unknown): void {
+  console.error("Window action failed", { action, error });
 }
 
 export function TitleBar({ onShowGuide }: TitleBarProps) {
@@ -19,40 +28,66 @@ export function TitleBar({ onShowGuide }: TitleBarProps) {
     void updateSetting("theme", theme === "dark" ? "light" : "dark");
   };
 
-  const noDrag = { WebkitAppRegion: "no-drag" } as React.CSSProperties;
+  const handleClose = (): void => {
+    void win.close().catch((error: unknown) => {
+      logWindowActionError("close", error);
+    });
+  };
+
+  const handleMinimize = (): void => {
+    void win.minimize().catch((error: unknown) => {
+      logWindowActionError("minimize", error);
+    });
+  };
+
+  const handleToggleMaximize = (): void => {
+    void win.toggleMaximize().catch((error: unknown) => {
+      logWindowActionError("toggle-maximize", error);
+    });
+  };
+
+  const handleTitleBarMouseDown = (event: MouseEvent<HTMLDivElement>): void => {
+    if (event.button !== 0 || isWindowControlTarget(event.target)) {
+      return;
+    }
+
+    void win.startDragging().catch((error: unknown) => {
+      logWindowActionError("start-dragging", error);
+    });
+  };
 
   return (
     <div
-      data-tauri-drag-region
-      className="theme-transition flex h-10 shrink-0 items-center justify-between px-3"
-      style={
-        {
-          background: "var(--bg-surface)",
-          borderBottom: "1px solid var(--border)",
-          WebkitAppRegion: "drag",
-        } as React.CSSProperties
-      }
+      className="theme-transition relative flex h-10 shrink-0 items-center justify-between px-3 select-none"
+      style={{
+        background: "var(--bg-surface)",
+        borderBottom: "1px solid var(--border)",
+      }}
+      onMouseDown={handleTitleBarMouseDown}
     >
       {/* Left: traffic lights + sidebar toggle */}
-      <div className="flex items-center gap-2" style={noDrag}>
+      <div className="relative z-10 flex items-center gap-2" data-window-control>
         {/* macOS traffic lights */}
         <div className="flex items-center gap-1.5">
           <button
             type="button"
             aria-label="Close"
-            onClick={() => win.close()}
+            data-window-control
+            onClick={handleClose}
             className="flex h-3 w-3 items-center justify-center rounded-full bg-[#ff5f57] transition-opacity hover:opacity-80"
           />
           <button
             type="button"
             aria-label="Minimize"
-            onClick={() => win.minimize()}
+            data-window-control
+            onClick={handleMinimize}
             className="h-3 w-3 rounded-full bg-[#febc2e] transition-opacity hover:opacity-80"
           />
           <button
             type="button"
             aria-label="Maximize"
-            onClick={() => win.toggleMaximize()}
+            data-window-control
+            onClick={handleToggleMaximize}
             className="h-3 w-3 rounded-full bg-[#28c840] transition-opacity hover:opacity-80"
           />
         </div>
@@ -61,6 +96,7 @@ export function TitleBar({ onShowGuide }: TitleBarProps) {
         <button
           type="button"
           aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          data-window-control
           onClick={toggleSidebar}
           className="ml-1 flex h-6 w-6 items-center justify-center rounded-md transition-all"
           style={{ color: "var(--text-muted)" }}
@@ -78,24 +114,22 @@ export function TitleBar({ onShowGuide }: TitleBarProps) {
       </div>
 
       {/* Center: logo */}
-      <div
-        className="absolute left-1/2 flex -translate-x-1/2 items-center gap-1.5 select-none"
-        data-tauri-drag-region
-      >
+      <div className="pointer-events-none absolute left-1/2 flex -translate-x-1/2 items-center gap-1.5">
         <BridgeIcon className="h-5 w-5" gradient />
         <span
           className="text-xs font-semibold tracking-wide"
           style={{ color: "var(--text-muted)" }}
         >
-          ContextBridge
+          Context Bridge
         </span>
       </div>
 
       {/* Right: help + theme toggle */}
-      <div className="flex items-center gap-1" style={noDrag}>
+      <div className="relative z-10 flex items-center gap-1" data-window-control>
         <button
           type="button"
           aria-label="Usage guide"
+          data-window-control
           onClick={onShowGuide}
           className="flex h-6 w-6 items-center justify-center rounded-md transition-all"
           style={{ color: "var(--text-muted)" }}
@@ -114,6 +148,7 @@ export function TitleBar({ onShowGuide }: TitleBarProps) {
         <button
           type="button"
           aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          data-window-control
           onClick={toggleTheme}
           className="flex h-6 w-6 items-center justify-center rounded-md transition-all"
           style={{ color: "var(--text-muted)" }}

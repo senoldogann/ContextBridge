@@ -11,7 +11,7 @@ describe("Button", () => {
   it("applies primary variant styles by default", () => {
     render(<Button>Primary</Button>);
     const btn = screen.getByRole("button");
-    expect(btn).toHaveStyle({ color: "#ffffff" });
+    expect(btn).toHaveStyle({ color: "var(--bg-base)" });
   });
 
   it("applies secondary variant styles", () => {

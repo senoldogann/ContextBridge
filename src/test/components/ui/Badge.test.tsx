@@ -11,7 +11,8 @@ describe("Badge", () => {
   it("applies default variant classes when no variant is specified", () => {
     render(<Badge>Default</Badge>);
     const badge = screen.getByText("Default");
-    expect(badge).toHaveClass("bg-zinc-800", "text-zinc-300");
+    expect(badge).toHaveClass("inline-flex", "ring-1", "ring-inset");
+    expect(badge).not.toHaveClass("text-emerald-500");
   });
 
   it("applies primary variant classes", () => {
@@ -23,7 +24,7 @@ describe("Badge", () => {
   it("applies success variant classes", () => {
     render(<Badge variant="success">Success</Badge>);
     const badge = screen.getByText("Success");
-    expect(badge).toHaveClass("text-emerald-500");
+    expect(badge).toHaveClass("text-emerald-400");
   });
 
   it("applies warning variant classes", () => {
